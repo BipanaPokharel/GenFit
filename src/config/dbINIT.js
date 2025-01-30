@@ -1,20 +1,27 @@
-const sequelize = require('./database');
-const User = require('../models/user');
+const { Sequelize } = require("sequelize");
+
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    dialect: "postgres",
+    logging: false,
+  }
+);
 
 const initializeDatabase = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Database connection established.');
-        
-        // Sync all models
-        await sequelize.sync({ alter: true });
-        console.log('Database models synchronized.');
-        
-        return true;
-    } catch (error) {
-        console.error('Database initialization error:', error);
-        return false;
-    }
+  try {
+    await sequelize.authenticate();
+    console.log("Database connection established.");
+    await sequelize.sync();
+    console.log("Database models synchronized.");
+    return true;
+  } catch (error) {
+    console.error("Unable to connect to the database:", error);
+    return false;
+  }
 };
 
-module.exports = { initializeDatabase };
+module.exports = { sequelize, initializeDatabase };
