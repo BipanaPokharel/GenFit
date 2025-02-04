@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -49,28 +51,60 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       _isLoading = true;
     });
 
-    // Simulating email sending process
-    await Future.delayed(const Duration(seconds: 2));
+    final url = Uri.parse('http://localhost:3000/api/forgot-password/send-otp');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'email': _emailController.text}),
+    );
 
-    setState(() {
-      _isPinSent = true;
-      _isLoading = false;
-    });
+    if (response.statusCode == 200) {
+      setState(() {
+        _isPinSent = true;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+      final errorData = json.decode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${errorData['message']}')),
+      );
+    }
   }
 
-  Future<void> _verifyPin() async {
+  Future<void> _verifyPinAndResetPassword() async {
     setState(() {
       _isLoading = true;
     });
 
-    // Simulating pin verification process
-    await Future.delayed(const Duration(seconds: 2));
+    final url =
+        Uri.parse('http://localhost:3000/api/forgot-password/verify-otp');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'email': _emailController.text,
+        'otp': _pinController.text,
+        'newPassword': _passwordController.text,
+      }),
+    );
 
-    setState(() {
-      // Assuming verification is successful
-      _isPinVerified = true;
-      _isLoading = false;
-    });
+    if (response.statusCode == 200) {
+      setState(() {
+        _isPinVerified = true;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+      final errorData = json.decode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${errorData['message']}')),
+      );
+    }
   }
 
   @override
@@ -211,7 +245,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             ? null
                             : () async {
                                 if (_formKey.currentState!.validate()) {
-                                  await _verifyPin();
+                                  await _verifyPinAndResetPassword();
                                 }
                               },
                         child: _isLoading

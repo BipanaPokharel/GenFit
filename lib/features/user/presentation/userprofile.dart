@@ -1,44 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class UserProfile extends StatefulWidget {
-  const UserProfile({super.key});
+  const UserProfile({Key? key}) : super(key: key);
 
   @override
   _UserProfileState createState() => _UserProfileState();
 }
 
 class _UserProfileState extends State<UserProfile> {
-  final String profileImage = 'https://example.com/user_profile.jpg';
-  final String username = 'Fitness Enthusiast';
-  final String bio = 'Passionate about health and fitness. Sharing my journey!';
-  final int followers = 432;
-  final int following = 218;
+  Map<String, dynamic>? userProfile;
 
-  final List<Map<String, dynamic>> userPosts = [
-    {
-      'image': 'https://example.com/post1.jpg',
-      'type': 'Cardio',
-    },
-    {
-      'image': 'https://example.com/post2.jpg',
-      'type': 'Strength',
-    },
-    {
-      'image': 'https://example.com/post3.jpg',
-      'type': 'Flexibility',
-    },
-    {
-      'image': 'https://example.com/post4.jpg',
-      'type': 'Endurance',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchUserProfile();
+  }
 
-  bool isFollowing = false;
+  Future<void> fetchUserProfile() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'http://localhost:3000/api/user/profile/22')); // Replace with your actual backend URL
+
+      if (response.statusCode == 200) {
+        setState(() {
+          userProfile = json.decode(response.body);
+        });
+      } else {
+        print(
+            'Failed to load user profile: ${response.statusCode} ${response.body}');
+        throw Exception('Failed to load user profile');
+      }
+    } catch (error) {
+      print('Error fetching user profile: $error');
+      throw Exception('Failed to load user profile');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (userProfile == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -49,81 +54,22 @@ class _UserProfileState extends State<UserProfile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: CachedNetworkImage(
-                    imageUrl: profileImage,
-                    fit: BoxFit.cover,
-                  ).image,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        username,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(bio),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text('$followers Followers'),
-                          const SizedBox(width: 16),
-                          Text('$following Following'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      isFollowing = !isFollowing;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isFollowing ? Colors.grey : Colors.green,
-                  ),
-                  child: Text(isFollowing ? 'Unfollow' : 'Follow'),
-                ),
-              ],
+            CircleAvatar(
+              radius: 40,
+              backgroundImage: NetworkImage(userProfile!['profile_pic']),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: userPosts.length,
-                itemBuilder: (context, index) {
-                  final post = userPosts[index];
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: post['image'],
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                },
-              ),
+            Text(
+              userProfile!['username'],
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
+            const SizedBox(height: 8),
+            Text('Email: ${userProfile!['email']}'),
+            const SizedBox(height: 8),
+            Text('Fitness Goal: ${userProfile!['fitness_goal']}'),
           ],
         ),
       ),
     );
   }
-}
-
-extension on CachedNetworkImage {
-  get image => null;
 }

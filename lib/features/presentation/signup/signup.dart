@@ -14,7 +14,7 @@ class SignUp extends StatefulWidget {
 
 class _SignUpState extends State<SignUp> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool? _rememberMe = false;
+  final bool? _rememberMe = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   DateTime? _dateOfBirth;
@@ -62,7 +62,7 @@ class _SignUpState extends State<SignUp> {
           context,
           MaterialPageRoute(
               builder: (context) =>
-                  Login()), // Replace with your login page widget
+                  const Login()), // Replace with your login page widget
         );
       } else {
         // Handle error response

@@ -13,6 +13,19 @@ class _MealPlannerState extends State<MealPlanner> {
   List<String> weekDays = [];
   Map<String, List<String>> userIngredients = {};
 
+  // Sample dataset of recipes
+  final Map<String, List<String>> recipes = {
+    'Chicken Salad': ['chicken', 'lettuce', 'tomato', 'cucumber'],
+    'Vegetable Stir Fry': ['broccoli', 'carrot', 'bell pepper', 'soy sauce'],
+    'Spaghetti Bolognese': [
+      'spaghetti',
+      'ground beef',
+      'tomato sauce',
+      'onion'
+    ],
+    'Fruit Smoothie': ['banana', 'strawberry', 'yogurt', 'honey'],
+  };
+
   @override
   void initState() {
     super.initState();
@@ -247,7 +260,9 @@ class _MealPlannerState extends State<MealPlanner> {
 
   Future<void> _showRecommendationDialog(
       String mealType, List<String> ingredients) async {
-    // Simulated AI recommendation
+    // Get recommended meals based on ingredients
+    List<String> recommendedMeals = _getRecommendedMeals(ingredients);
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -258,15 +273,16 @@ class _MealPlannerState extends State<MealPlanner> {
           children: [
             Text('Based on your ingredients: ${ingredients.join(", ")}'),
             const SizedBox(height: 16),
-            const Text('Recommended meal:'),
+            const Text('Recommended meals:'),
             const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                title: Text('Healthy $mealType Bowl'),
-                subtitle: const Text('Estimated preparation time: 25 minutes'),
-                trailing: const Icon(Icons.restaurant_menu),
-              ),
-            ),
+            ...recommendedMeals.map((meal) => Card(
+                  child: ListTile(
+                    title: Text(meal),
+                    subtitle:
+                        const Text('Estimated preparation time: 25 minutes'),
+                    trailing: const Icon(Icons.restaurant_menu),
+                  ),
+                )),
           ],
         ),
         actions: [
@@ -287,6 +303,19 @@ class _MealPlannerState extends State<MealPlanner> {
         ],
       ),
     );
+  }
+
+  List<String> _getRecommendedMeals(List<String> ingredients) {
+    List<String> recommendedMeals = [];
+
+    recipes.forEach((meal, recipeIngredients) {
+      if (ingredients
+          .any((ingredient) => recipeIngredients.contains(ingredient))) {
+        recommendedMeals.add(meal);
+      }
+    });
+
+    return recommendedMeals;
   }
 
   @override

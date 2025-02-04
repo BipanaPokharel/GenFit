@@ -1,7 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fyp/features/presentation/password/password.dart';
 import 'package:fyp/features/presentation/signup/signup.dart';
+import 'package:fyp/features/workout/presentation/equipment_listing.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class Login extends StatefulWidget {
   const Login({super.key, this.email});
@@ -29,12 +34,46 @@ class _LoginState extends State<Login> {
     return null;
   }
 
+  Future<void> _login() async {
+    final url = Uri.parse('http://localhost:3000/api/login');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'email': _emailField.text,
+        'password': _passwordField.text,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      // Handle successful login
+      json.decode(response.body);
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login successful!')),
+      );
+      // Navigate to MealPlanner screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+            builder: (context) =>
+                DailyWorkoutsPage(username: _emailField.text)),
+      );
+    } else {
+      // Handle login failure
+      final errorData = json.decode(response.body);
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: ${errorData['message']}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer(builder: (context, ref, child) {
       // final authController = ref.read(authProvider.notifier);
       return Scaffold(
-        backgroundColor: Colors.blueGrey[800],
+        backgroundColor: const Color.fromARGB(255, 122, 185, 108),
         appBar: AppBar(
           title: const Text("Workout Buddy"),
           backgroundColor: Colors.blueGrey[900],
@@ -115,7 +154,7 @@ class _LoginState extends State<Login> {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey[700],
+                    backgroundColor: const Color.fromARGB(255, 53, 195, 193),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 32, vertical: 16),
                   ),
@@ -125,9 +164,7 @@ class _LoginState extends State<Login> {
                         _isLoading = true;
                       });
 
-                      // await authController.login(context,
-                      //     email: _emailField.text,
-                      //     password: _passwordField.text);
+                      await _login();
 
                       setState(() {
                         _isLoading = false;

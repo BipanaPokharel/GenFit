@@ -11,6 +11,7 @@ import 'package:fyp/features/presentation/login/login.dart';
 import 'package:fyp/features/presentation/onboarding/onboarding.dart';
 import 'package:fyp/features/presentation/password/password.dart';
 import 'package:fyp/features/presentation/signup/signup.dart';
+
 import 'package:fyp/features/user/presentation/userprofile.dart';
 import 'package:fyp/features/workout/journaling.dart';
 import 'package:fyp/features/workout/presentation/equipment_listing.dart';
@@ -106,7 +107,9 @@ class Operator extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const DailyWorkoutsPage(),
+                      builder: (context) => const DailyWorkoutsPage(
+                        username: 'bipana',
+                      ),
                     ),
                   );
                 },
@@ -191,6 +194,16 @@ class Operator extends StatelessWidget {
                   );
                 },
               ),
+              // ListTile(
+              //   title: const Text('userdashboard'),
+              //   onTap: () {
+              //     Navigator.of(context).push(
+              //       MaterialPageRoute(
+              //         builder: (context) => ProfileScreen(),
+              //       ),
+              //     );
+              //   },
+              // ),
             ],
           ),
         ));
