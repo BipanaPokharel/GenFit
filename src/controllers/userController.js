@@ -1,5 +1,17 @@
-// controllers/userController.js
-// Adjust the path if needed
+const ApiService = require("../utils/api"); // Import ApiService
+
+exports.getMealRecommendations = async (req, res) => {
+  try {
+    const { ingredients } = req.body; // Extract ingredients from request body
+    const recommendations = await ApiService.fetchMealRecommendations(
+      ingredients
+    );
+    res.status(200).json({ recommendations }); // Respond with meal recommendations
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    res.status(500).json({ error: error.message }); // Send the error message
+  }
+};
 
 // Create a new user
 exports.createUser = async (req, res) => {

@@ -2,15 +2,16 @@ const express = require("express");
 const app = express();
 const signupRoutes = require("./routes/signupRoutes");
 const loginRoutes = require("./routes/loginRoutes");
-const forgetPasswordRoutes = require("./routes/forgetPasswordRoutes"); // Ensure this matches the actual file name
+const forgetPasswordRoutes = require("./routes/forgetPasswordRoutes");
+const userRoutes = require("./routes/userRoutes"); // Import user routes
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Use the routes
 app.use("/api/signup", signupRoutes);
 app.use("/api/login", loginRoutes);
 app.use("/api/forgot-password", forgetPasswordRoutes);
+app.use("/api/user", userRoutes); // Register user routes
 
 // Debug log to check if routes are registered
 app._router.stack.forEach(function (r) {

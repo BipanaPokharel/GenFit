@@ -1,12 +1,8 @@
-// routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
-const { createUser, getAllUsers } = require("../controllers/userController"); // Import controller methods
+const userController = require("../controllers/userController.js");
 
-// Route for creating a user
-router.post("/user", createUser);
-
-// Route for fetching all users
-router.get("/user", getAllUsers);
+// Route for meal recommendations
+router.post("/recommendations", userController.getMealRecommendations);
 
 module.exports = router;
