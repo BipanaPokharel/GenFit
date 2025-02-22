@@ -22,6 +22,7 @@ dependencies:
   youtube_player_flutter: ^9.1.1
   http: ^1.2.2
   flutter_inappwebview: ^6.1.5 # Updated dependency for in-app web view
+  shared_preferences: ^2.5.2
 
 dev_dependencies:
   flutter_test:

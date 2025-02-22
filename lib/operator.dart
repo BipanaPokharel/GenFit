@@ -11,8 +11,7 @@ import 'package:fyp/features/presentation/login/login.dart';
 import 'package:fyp/features/presentation/onboarding/onboarding.dart';
 import 'package:fyp/features/presentation/password/password.dart';
 import 'package:fyp/features/presentation/signup/signup.dart';
-
-import 'package:fyp/features/user/presentation/userprofile.dart';
+import 'package:fyp/features/user/presentation/userdashboard.dart';
 import 'package:fyp/features/workout/journaling.dart';
 import 'package:fyp/features/workout/presentation/equipment_listing.dart';
 import 'package:fyp/features/workout/presentation/mealplanner.dart';
@@ -92,16 +91,7 @@ class Operator extends StatelessWidget {
                   );
                 },
               ),
-              ListTile(
-                title: const Text('FitnessUserProfile'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const UserProfile(),
-                    ),
-                  );
-                },
-              ),
+
               ListTile(
                 title: const Text('EquipmentTypeSelector'),
                 onTap: () {
@@ -130,6 +120,18 @@ class Operator extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const FriendManagement(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                title: const Text('UserProfile'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => DashboardScreen(
+                        onLogout: () {},
+                      ),
                     ),
                   );
                 },

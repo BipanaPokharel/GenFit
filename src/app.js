@@ -1,9 +1,11 @@
+// backend/app.js
 const express = require("express");
 const app = express();
 const signupRoutes = require("./routes/signupRoutes");
 const loginRoutes = require("./routes/loginRoutes");
 const forgetPasswordRoutes = require("./routes/forgetPasswordRoutes");
-const userRoutes = require("./routes/userRoutes"); // Import user routes
+const userRoutes = require("./routes/userRoutes"); 
+const journalRoutes = require("./routes/journalRoutes"); 
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -11,7 +13,8 @@ app.use(express.json());
 app.use("/api/signup", signupRoutes);
 app.use("/api/login", loginRoutes);
 app.use("/api/forgot-password", forgetPasswordRoutes);
-app.use("/api/user", userRoutes); // Register user routes
+app.use("/api/user", userRoutes); 
+app.use("/api/journal", journalRoutes); 
 
 // Debug log to check if routes are registered
 app._router.stack.forEach(function (r) {

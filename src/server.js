@@ -1,6 +1,6 @@
 require("dotenv").config();
 const app = require("./app");
-const { initializeDatabase } = require("./config/dbINIT"); // Updated path to match the actual file location
+const { initializeDatabase } = require("./config/dbINIT"); 
 
 const PORT = process.env.PORT || 3000;
 

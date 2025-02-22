@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class JournalPage extends StatefulWidget {
-  const JournalPage({super.key});
+  const JournalPage({Key? key}) : super(key: key);
 
   @override
   State<JournalPage> createState() => _JournalPageState();
@@ -13,215 +15,387 @@ class JournalPage extends StatefulWidget {
 class _JournalPageState extends State<JournalPage> {
   final List<JournalEntry> journalEntries = [];
   final TextEditingController journalController = TextEditingController();
+  final String apiUrl = "http://localhost:3000/api/journal";
+  String selectedMood = 'happy';
+  final List<String> moodOptions = [
+    'happy',
+    'sad',
+    'neutral',
+    'excited',
+    'anxious'
+  ];
+  bool isLoading = true;
 
-  void addEntry() {
-    if (journalController.text.isNotEmpty) {
-      setState(() {
-        journalEntries.add(JournalEntry(
-          content: journalController.text,
-          date: DateTime.now(),
-        ));
-        journalController.clear();
-      });
+  final Map<String, IconData> moodIcons = {
+    'happy': Icons.sentiment_very_satisfied,
+    'sad': Icons.sentiment_very_dissatisfied,
+    'neutral': Icons.sentiment_neutral,
+    'excited': Icons.mood,
+    'anxious': Icons.mood_bad,
+  };
+
+  final Map<String, Color> moodColors = {
+    'happy': Colors.amber,
+    'sad': Colors.blue,
+    'neutral': Colors.grey,
+    'excited': Colors.orange,
+    'anxious': Colors.purple,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    fetchEntries();
+  }
+
+  Future<void> fetchEntries() async {
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          journalEntries.clear();
+          journalEntries.addAll(
+              data.map((entry) => JournalEntry.fromJson(entry)).toList());
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
     }
   }
 
-  void deleteEntry(int index) {
-    setState(() {
-      journalEntries.removeAt(index);
-    });
+  Future<void> addEntry() async {
+    if (journalController.text.isEmpty) return;
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': 2,
+          'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          'mood': selectedMood,
+          'notes': journalController.text,
+        }),
+      );
+      if (response.statusCode == 201) {
+        await fetchEntries();
+        Navigator.of(context).pop();
+        journalController.clear();
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
   }
 
-  void _showEntryDetails(BuildContext context, JournalEntry entry) {
-    showModalBottomSheet(
+  Future<void> updateEntry(int id) async {
+    if (journalController.text.isEmpty) return;
+    try {
+      final response = await http.put(
+        Uri.parse('$apiUrl/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': 2,
+          'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          'mood': selectedMood,
+          'notes': journalController.text,
+        }),
+      );
+      if (response.statusCode == 200) {
+        await fetchEntries();
+        Navigator.of(context).pop();
+        journalController.clear();
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> deleteEntry(int id) async {
+    try {
+      final response = await http.delete(Uri.parse('$apiUrl/$id'));
+      if (response.statusCode == 200) {
+        setState(() {
+          journalEntries.removeWhere((entry) => entry.id == id);
+        });
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  void showEntryDialog({JournalEntry? entry}) {
+    if (entry != null) {
+      journalController.text = entry.notes;
+      selectedMood = entry.mood;
+    } else {
+      journalController.clear();
+      selectedMood = 'happy';
+    }
+
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        builder: (_, controller) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormat('MMMM d, y - h:mm a').format(entry.date),
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: controller,
-                  child: Text(
-                    entry.content,
-                    style: GoogleFonts.lato(fontSize: 18),
-                  ),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      entry == null ? 'New Entry' : 'Edit Entry',
+                      style: GoogleFonts.poppins(
+                          fontSize: 24, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: moodOptions.map((mood) {
+                          return GestureDetector(
+                            onTap: () => setState(() => selectedMood = mood),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: selectedMood == mood
+                                    ? moodColors[mood]?.withOpacity(0.2)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                moodIcons[mood],
+                                color: selectedMood == mood
+                                    ? moodColors[mood]
+                                    : Colors.grey,
+                                size: 32,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: journalController,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText: "What's on your mind?",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide:
+                              BorderSide(color: moodColors[selectedMood]!),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancel',
+                              style: TextStyle(color: Colors.grey[600])),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (entry != null) {
+                              updateEntry(entry.id);
+                            } else {
+                              addEntry();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: moodColors[selectedMood],
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            entry == null ? 'Add Entry' : 'Update',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverAppBar(
-            expandedHeight: 200.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text('My Magical Journal',
-                  style: GoogleFonts.dancingScript(fontSize: 26)),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [Colors.purple, Colors.blue],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Your Thoughts',
-                style: GoogleFonts.merriweather(
-                    fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          SliverAnimatedList(
-            initialItemCount: journalEntries.length,
-            itemBuilder: (context, index, animation) {
-              return AnimationConfiguration.staggeredList(
-                position: index,
-                duration: const Duration(milliseconds: 375),
-                child: SlideAnimation(
-                  verticalOffset: 50.0,
-                  child: FadeInAnimation(
-                    child: JournalEntryCard(
-                      entry: journalEntries[index],
-                      onDelete: () => deleteEntry(index),
-                      onTap: () =>
-                          _showEntryDetails(context, journalEntries[index]),
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: Text('Journal',
+            style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87)),
+        centerTitle: true,
+      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator(color: moodColors['happy']))
+          : AnimationLimiter(
+              child: ListView.builder(
+                itemCount: journalEntries.length,
+                padding: const EdgeInsets.all(16),
+                itemBuilder: (context, index) {
+                  final entry = journalEntries[index];
+                  return AnimationConfiguration.staggeredList(
+                    position: index,
+                    duration: const Duration(milliseconds: 375),
+                    child: SlideAnimation(
+                      verticalOffset: 50.0,
+                      child: FadeInAnimation(
+                        child: Card(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20)),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: moodColors[entry.mood]
+                                            ?.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(moodIcons[entry.mood],
+                                          color: moodColors[entry.mood],
+                                          size: 24),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      DateFormat('MMMM d, yyyy')
+                                          .format(DateTime.parse(entry.date)),
+                                      style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14),
+                                    ),
+                                    const Spacer(),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined),
+                                      color: Colors.grey[600],
+                                      onPressed: () =>
+                                          showEntryDialog(entry: entry),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline),
+                                      color: Colors.red[300],
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(20)),
+                                            title: const Text('Delete Entry'),
+                                            content: const Text(
+                                                'Are you sure you want to delete this entry?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text('Cancel',
+                                                    style: TextStyle(
+                                                        color:
+                                                            Colors.grey[600])),
+                                              ),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    deleteEntry(entry.id),
+                                                child: const Text('Delete',
+                                                    style: TextStyle(
+                                                        color: Colors.red)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(entry.notes,
+                                    style: const TextStyle(
+                                        fontSize: 16, height: 1.5)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+                  );
+                },
+              ),
+            ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddEntryDialog(context),
-        label: const Text('New Entry'),
+        onPressed: () => showEntryDialog(),
+        backgroundColor: moodColors['happy'],
         icon: const Icon(Icons.add),
-        backgroundColor: Colors.purple,
+        label: const Text('New Entry'),
       ),
-    );
-  }
-
-  void _showAddEntryDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add New Entry', style: GoogleFonts.merriweather()),
-          content: TextField(
-            controller: journalController,
-            decoration: const InputDecoration(hintText: "What's on your mind?"),
-            maxLines: 5,
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Save'),
-              onPressed: () {
-                addEntry();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }
 
 class JournalEntry {
-  final String content;
-  final DateTime date;
+  final int id;
+  final int userId;
+  final String date;
+  final String mood;
+  final String notes;
 
-  JournalEntry({required this.content, required this.date});
-}
-
-class JournalEntryCard extends StatelessWidget {
-  final JournalEntry entry;
-  final VoidCallback onDelete;
-  final VoidCallback onTap;
-
-  const JournalEntryCard({
-    super.key,
-    required this.entry,
-    required this.onDelete,
-    required this.onTap,
+  JournalEntry({
+    required this.id,
+    required this.userId,
+    required this.date,
+    required this.mood,
+    required this.notes,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormat('MMMM d, y - h:mm a').format(entry.date),
-                style: GoogleFonts.lato(fontSize: 14, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                entry.content.length > 100
-                    ? '${entry.content.substring(0, 100)}...'
-                    : entry.content,
-                style: GoogleFonts.merriweather(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: Icon(Icons.delete_outline, color: Colors.red[300]),
-                  onPressed: onDelete,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  factory JournalEntry.fromJson(Map<String, dynamic> json) {
+    return JournalEntry(
+      id: json['id'] as int,
+      userId: json['user_id'] as int,
+      date: json['date'],
+      mood: json['mood'],
+      notes: json['notes'],
     );
   }
 }

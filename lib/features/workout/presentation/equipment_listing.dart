@@ -3,11 +3,11 @@ import 'package:fyp/features/workout/presentation/mealplanner.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:fyp/utils/api.dart';
+import 'package:fyp/utils/api_service.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class DailyWorkoutsPage extends StatefulWidget {
-  final String username; // Accepting username as a parameter
+  final String username;
 
   const DailyWorkoutsPage({super.key, required this.username});
 
@@ -141,7 +141,7 @@ class _DailyWorkoutsPageState extends State<DailyWorkoutsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Good Morning, ${widget.username}!', // Use dynamic username
+              'Welcome Back, ${widget.username}!',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
