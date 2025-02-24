@@ -3,7 +3,6 @@ import 'package:fyp/features/communityfeed/firstpage.dart';
 import 'package:fyp/features/communityfeed/presentation/bmi.dart';
 import 'package:fyp/features/communityfeed/presentation/community.dart';
 import 'package:fyp/features/communityfeed/presentation/friendmanagement.dart';
-
 import 'package:fyp/features/communityfeed/presentation/message.dart';
 import 'package:fyp/features/communityfeed/presentation/notification.dart';
 import 'package:fyp/features/communityfeed/secondpage.dart';
@@ -15,7 +14,6 @@ import 'package:fyp/features/user/presentation/userdashboard.dart';
 import 'package:fyp/features/workout/journaling.dart';
 import 'package:fyp/features/workout/presentation/equipment_listing.dart';
 import 'package:fyp/features/workout/presentation/mealplanner.dart';
-
 import 'package:fyp/features/workout/presentation/workout.dart';
 
 class Operator extends StatelessWidget {
@@ -71,6 +69,7 @@ class Operator extends StatelessWidget {
                   );
                 },
               ),
+
               ListTile(
                 title: const Text('signup'),
                 onTap: () {
@@ -115,11 +114,11 @@ class Operator extends StatelessWidget {
                 },
               ),
               ListTile(
-                title: const Text('friend'),
+                title: const Text('FriendRequest'),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const FriendManagement(),
+                      builder: (context) => FriendRequestsScreen(),
                     ),
                   );
                 },

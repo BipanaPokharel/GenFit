@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fyp/features/workout/presentation/mealplanner.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:fyp/utils/api_service.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -133,8 +131,7 @@ class _DailyWorkoutsPageState extends State<DailyWorkoutsPage> {
       children: [
         const CircleAvatar(
           radius: 24,
-          backgroundImage: NetworkImage(
-              'https://cdn.pixabay.com/photo/2014/12/16/22/25/woman-570883_640.jpg'),
+          backgroundImage: NetworkImage(''),
         ),
         const SizedBox(width: 16),
         Column(
