@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io'; // Import dart:io
+import 'dart:io';
 
 class ApiService {
   final String baseUrl;
@@ -69,6 +69,27 @@ class ApiService {
       }
     } catch (e) {
       print('Error fetching workouts: $e');
+      rethrow;
+    }
+  }
+
+  /// Add a new workout
+  Future<void> addWorkout(Map<String, dynamic> workoutData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/workouts'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(workoutData),
+      );
+
+      if (response.statusCode == 201) {
+        print('Workout added successfully!');
+      } else {
+        print('Failed to add workout. Status code: ${response.statusCode}');
+        throw Exception('Failed to add workout');
+      }
+    } catch (e) {
+      print('Error adding workout: $e');
       rethrow;
     }
   }

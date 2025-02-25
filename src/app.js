@@ -7,6 +7,7 @@ const userRoutes = require("./routes/userRoutes");
 const journalRoutes = require("./routes/journalRoutes");
 const workoutRoutes = require("./routes/workoutRoutes");
 const friendRequestRoutes = require("./routes/friendRequestRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 
 // Middleware to parse JSON bodies
@@ -20,6 +21,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/journal", journalRoutes);
 app.use("/api/workouts", workoutRoutes); 
 app.use("/api/friend-requests", friendRequestRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Debug log to check if routes are registered
 app._router.stack.forEach(function (r) {

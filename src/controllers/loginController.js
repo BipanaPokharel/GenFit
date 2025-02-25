@@ -3,10 +3,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
 exports.login = async (req, res) => {
-  console.log("Login request body:", req.body); // Debug log
+  console.log("Login request body:", req.body);
 
   try {
-    const { email, password } = req.body; // Extract email and password from request body
+    const { email, password } = req.body; 
 
     // Check if user exists in the database
     const user = await User.findOne({ where: { email } });

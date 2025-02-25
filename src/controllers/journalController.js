@@ -1,5 +1,5 @@
 // controllers/journalController.js
-const Journal = require("../models/journal");  // Make sure this path is correct
+const Journal = require("../models/journal");
 
 exports.getAllEntries = async (req, res) => {
     try {

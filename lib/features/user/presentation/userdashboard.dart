@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum NavigationItem { library, workouts, settings, mealPlanner }
+enum NavigationItem { library, workouts, settings, mealPlanner, chat }
 
 class FriendRequest {
   final int id;
@@ -366,9 +366,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case NavigationItem.workouts:
         return 'Workouts';
       case NavigationItem.settings:
-        return 'Settings'; // Corrected this line
+        return 'Settings';
       case NavigationItem.mealPlanner:
         return 'Meal Planner';
+      case NavigationItem.chat:
+        return 'Chat';
     }
   }
 
@@ -389,15 +391,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: SingleChildScrollView(
         child: Column(
           children: [
-            _buildNavigationItem(NavigationItem.library, Icons.book, 'Library'),
+            _buildNavigationItem(NavigationItem.library, Icons.book, 'Library');
             _buildNavigationItem(
-                NavigationItem.workouts, Icons.fitness_center, 'Workouts'),
+                NavigationItem.workouts, Icons.fitness_center, 'Workouts');
             _buildNavigationItem(
-                NavigationItem.settings, Icons.settings, 'Settings'),
+                NavigationItem.settings, Icons.settings, 'Settings');
             _buildNavigationItem(NavigationItem.mealPlanner,
-                Icons.restaurant_menu, 'Meal Planner'),
-            const SizedBox(height: 20),
-            const Divider(),
+                Icons.restaurant_menu, 'Meal Planner');
+            _buildNavigationItem(NavigationItem.chat, Icons.chat, 'Chat');
+            const SizedBox(height: 20);
+            const Divider();
             ListTile(
               leading: Icon(Icons.exit_to_app, color: Colors.red[400]),
               title: Text('Logout',
@@ -455,6 +458,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _buildSettingsContent(isDesktop);
       case NavigationItem.mealPlanner:
         return const MealPlanner();
+      case NavigationItem.chat:
+        return const ChatScreen();
       default:
         return _buildPlaceholderContent('Unknown Content');
     }
@@ -859,11 +864,113 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
           ],
         ),
+        bottomNavigationBar: _buildBottomNavigationBar(),
         drawer: isDesktop
             ? null
             : Drawer(
                 child: _buildNavigation(false),
               ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      selectedItemColor: Theme.of(context).primaryColor,
+      unselectedItemColor: Colors.grey[600],
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+      currentIndex: _selectedItem.index,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.book),
+          label: 'Library',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.fitness_center),
+          label: 'Workouts',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.restaurant_menu),
+          label: 'Meal Planner',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat),
+          label: 'Chat',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: 'Settings',
+        ),
+      ],
+      onTap: (index) {
+        setState(() {
+          _selectedItem = NavigationItem.values[index];
+        });
+      },
+    );
+  }
+}
+
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _messageController = TextEditingController();
+  List<String> messages = [];
+
+  void _sendMessage() {
+    setState(() {
+      messages.add(_messageController.text);
+      _messageController.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Chat'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(messages[index]),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Message',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _sendMessage,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

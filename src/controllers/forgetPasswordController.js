@@ -15,7 +15,7 @@ exports.sendOtp = async (req, res) => {
 
     const otp = crypto.randomBytes(3).toString("hex");
     user.resetPasswordOtp = otp;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpires = Date.now() + 3600000; 
     await user.save();
 
     const transporter = nodemailer.createTransport({
