@@ -9,12 +9,12 @@ import 'package:fyp/features/presentation/login/login.dart';
 import 'package:fyp/features/presentation/onboarding/onboarding.dart';
 import 'package:fyp/features/presentation/password/password.dart';
 import 'package:fyp/features/presentation/signup/signup.dart';
-import 'package:fyp/features/user/presentation/userselecttion.dart';
 import 'package:fyp/features/user/presentation/userdashboard.dart';
 import 'package:fyp/features/workout/journaling.dart';
 import 'package:fyp/features/workout/presentation/equipment_listing.dart';
 import 'package:fyp/features/workout/presentation/mealplanner.dart';
 import 'package:fyp/features/workout/presentation/workout.dart';
+import 'package:fyp/features/user/presentation/chat.dart';
 
 class Operator extends StatelessWidget {
   const Operator({super.key});
@@ -45,6 +45,17 @@ class Operator extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const JournalPage(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                title: const Text('chat'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ChatScreen(userId: 1, receiverId: 2),
                     ),
                   );
                 },
@@ -132,15 +143,6 @@ class Operator extends StatelessWidget {
                         onLogout: () {},
                       ),
                     ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('ChatScreen'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => UserSelectionScreen()),
                   );
                 },
               ),

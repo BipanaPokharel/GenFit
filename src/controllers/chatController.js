@@ -1,4 +1,5 @@
-const Chat = require("../models/chat");
+const { Chat } = require("../models/chat");
+
 
 // ✅ Send a message via REST API
 const sendMessage = async (req, res) => {

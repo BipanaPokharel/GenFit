@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 class ApiService {
   final String baseUrl;
@@ -118,7 +120,7 @@ class ApiService {
   Future<void> acceptFriendRequestById(int requestId) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/friendrequests/accept/$requestId'),
+        Uri.parse('$baseUrl/friend-requests/$requestId/accept'),
       );
 
       if (response.statusCode != 200) {
@@ -136,7 +138,7 @@ class ApiService {
   Future<void> rejectFriendRequestById(int requestId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/friendrequests/reject/$requestId'),
+        Uri.parse('$baseUrl/friend-requests/$requestId/reject'),
       );
 
       if (response.statusCode != 200) {
@@ -185,10 +187,12 @@ class ApiService {
     try {
       final uri = Uri.parse('$baseUrl/users/$userId/profile-picture');
       final request = http.MultipartRequest('POST', uri);
+      String? mimeType = lookupMimeType(imageFile.path);
       request.files.add(
         await http.MultipartFile.fromPath(
-          'profile_picture',
+          'profilePic',
           imageFile.path,
+          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
         ),
       );
       final response = await request.send();
@@ -208,7 +212,7 @@ class ApiService {
   Future<void> updateUserSettings(
       int userId, Map<String, dynamic> settings) async {
     try {
-      final uri = Uri.parse('$baseUrl/users/$userId/settings');
+      final uri = Uri.parse('$baseUrl/users/$userId');
       final response = await http.put(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -229,11 +233,11 @@ class ApiService {
   /// Change Password
   Future<void> changePassword(int userId, String newPassword) async {
     try {
-      final uri = Uri.parse('$baseUrl/users/$userId/password');
+      final uri = Uri.parse('$baseUrl/users/$userId');
       final response = await http.put(
         uri,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'newPassword': newPassword}),
+        body: jsonEncode({'password': newPassword}),
       );
 
       if (response.statusCode != 200) {

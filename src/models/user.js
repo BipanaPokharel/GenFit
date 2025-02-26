@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/dbINIT"); // Correct import
+const { sequelize } = require("../config/dbINIT");
 
 const User = sequelize.define(
   "User",

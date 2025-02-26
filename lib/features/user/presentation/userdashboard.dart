@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp/features/workout/presentation/mealplanner.dart';
 import 'package:fyp/utils/api_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:fyp/features/user/presentation/chat.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -391,16 +392,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: SingleChildScrollView(
         child: Column(
           children: [
-            _buildNavigationItem(NavigationItem.library, Icons.book, 'Library');
+            _buildNavigationItem(NavigationItem.library, Icons.book, 'Library'),
             _buildNavigationItem(
-                NavigationItem.workouts, Icons.fitness_center, 'Workouts');
+                NavigationItem.workouts, Icons.fitness_center, 'Workouts'),
             _buildNavigationItem(
-                NavigationItem.settings, Icons.settings, 'Settings');
+                NavigationItem.settings, Icons.settings, 'Settings'),
             _buildNavigationItem(NavigationItem.mealPlanner,
-                Icons.restaurant_menu, 'Meal Planner');
-            _buildNavigationItem(NavigationItem.chat, Icons.chat, 'Chat');
-            const SizedBox(height: 20);
-            const Divider();
+                Icons.restaurant_menu, 'Meal Planner'),
+            _buildNavigationItem(NavigationItem.chat, Icons.chat, 'Chat'),
+            const SizedBox(height: 20),
+            const Divider(),
             ListTile(
               leading: Icon(Icons.exit_to_app, color: Colors.red[400]),
               title: Text('Logout',
@@ -459,7 +460,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case NavigationItem.mealPlanner:
         return const MealPlanner();
       case NavigationItem.chat:
-        return const ChatScreen();
+        return ChatScreen(userId: userId!, receiverId: 2);
+
       default:
         return _buildPlaceholderContent('Unknown Content');
     }
@@ -910,68 +912,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _selectedItem = NavigationItem.values[index];
         });
       },
-    );
-  }
-}
-
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
-
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  List<String> messages = [];
-
-  void _sendMessage() {
-    setState(() {
-      messages.add(_messageController.text);
-      _messageController.clear();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(messages[index]),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Message',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

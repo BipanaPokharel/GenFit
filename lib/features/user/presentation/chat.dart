@@ -24,28 +24,21 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize the socket connection
     socket = IO.io('http://localhost:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
 
-    // Connect to the socket server
     socket.connect();
 
-    // Listen for connection event
     socket.on('connect', (_) {
       setState(() {
         isConnected = true;
       });
-
-      // Join as the current user (using server's 'join' event)
       socket.emit('join', widget.userId);
-
       print('Connected to socket server: ${socket.id}');
     });
 
-    // Listen for disconnect event
     socket.on('disconnect', (_) {
       setState(() {
         isConnected = false;
@@ -53,9 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Disconnected from socket server');
     });
 
-    // Listen for incoming messages
     socket.on('receive_message', (data) {
-      print('Message received: $data');
       if (data['senderId'] == widget.receiverId) {
         setState(() {
           messages.add({
@@ -67,25 +58,25 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     });
 
-    // Listen for message sent confirmation
     socket.on('message_sent', (data) {
       print('Message sent confirmation: $data');
     });
 
-    // Listen for error messages
     socket.on('error_message', (data) {
-      print('Error received: $data');
       _showErrorMessage(data['error']);
     });
 
-    // Fetch chat history from the REST API
     _fetchChatHistory();
   }
 
   @override
   void dispose() {
-    // Disconnect the socket when the screen is disposed
-    socket.disconnect();
+    if (isConnected) {
+      socket.disconnect();
+    }
+    socket.off('receive_message');
+    socket.off('message_sent');
+    socket.off('error_message');
     _controller.dispose();
     super.dispose();
   }
@@ -94,14 +85,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_controller.text.isNotEmpty) {
       final message = _controller.text.trim();
 
-      // Using the server's expected event structure
       socket.emit('send_message', {
         'senderId': widget.userId,
         'receiverId': widget.receiverId,
         'message': message,
       });
 
-      // Optimistically add to UI (will be confirmed by server)
       setState(() {
         messages.add({
           'senderId': widget.userId,
@@ -114,9 +103,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Fetch chat history using REST API
   Future<void> _fetchChatHistory() async {
-    // Updated to match the server's actual route pattern
     final url =
         'http://localhost:3000/api/chat/${widget.userId}/${widget.receiverId}';
 
@@ -135,7 +122,6 @@ class _ChatScreenState extends State<ChatScreen> {
               .toList();
         });
       } else {
-        // Handle error if fetching fails
         _showErrorMessage(
             'Failed to load chat history: ${response.statusCode}');
       }
@@ -144,7 +130,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Show error message dialog
   void _showErrorMessage(String message) {
     showDialog(
       context: context,
@@ -165,10 +150,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // Format the timestamp to a human-readable format
   String _formatTimestamp(String timestamp) {
     final DateTime dateTime = DateTime.parse(timestamp);
-    final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    final DateFormat formatter = DateFormat('HH:mm, dd MMM');
     return formatter.format(dateTime);
   }
 
@@ -178,7 +162,6 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text('Chat with User ${widget.receiverId}'),
         actions: [
-          // Connection status indicator
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Icon(
@@ -214,9 +197,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             child: Text(
                               message['message'],
                               style: TextStyle(
-                                  color: isSentByUser
-                                      ? Colors.white
-                                      : Colors.black),
+                                color:
+                                    isSentByUser ? Colors.white : Colors.black,
+                              ),
                             ),
                           ),
                         ),
