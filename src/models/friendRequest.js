@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/dbINIT");
-const User = require("./user"); // Import User model
+const User = require("./user"); 
 
 const FriendRequest = sequelize.define(
   "FriendRequest",
@@ -14,16 +14,16 @@ const FriendRequest = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "User", // Reference to the User table, not the model
-        key: "user_id", // Ensure it references User.user_id
+        model: "User", 
+        key: "user_id", 
       },
     },
     receiver_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "User", // Reference to the User table
-        key: "user_id", // Correctly referencing the user_id in User table
+        model: "User", 
+        key: "user_id", 
       },
     },
     status: {

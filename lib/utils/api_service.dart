@@ -3,281 +3,314 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   final String baseUrl;
+  static const String _tokenKey = 'auth_token';
+  static const String _userIdKey = 'user_id';
 
   ApiService(this.baseUrl);
 
-  /// Fetch meal recommendations based on ingredients
-  Future<List<Map<String, dynamic>>> fetchMealRecommendations(
-      List<String> ingredients) async {
+  // Helper method to get auth headers
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  // Generic error handler
+  dynamic _handleResponse(http.Response response) {
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        try {
+          return jsonDecode(response.body);
+        } catch (e) {
+          print('Error decoding JSON: ${response.body}');
+          throw Exception('Failed to decode JSON: ${response.body}');
+        }
+      case 400:
+        throw Exception('Bad request: ${response.body}');
+      case 401:
+        throw Exception('Unauthorized: Please login again');
+      case 403:
+        throw Exception('Forbidden: ${response.body}');
+      case 404:
+        throw Exception('Resource not found');
+      case 500:
+        throw Exception('Server error: ${response.body}');
+      default:
+        throw Exception('Request failed with status: ${response.statusCode}');
+    }
+  }
+
+  /// Authentication Methods
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/recommendations'),
+        Uri.parse('$baseUrl/auth/login'),
+        body: jsonEncode({'email': email, 'password': password}),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'ingredients': ingredients}),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return (data as List)
-            .map((meal) => <String, dynamic>{
-                  'meal': meal['title'],
-                  'ingredients': (meal['usedIngredients'] as List)
-                      .map((ing) => ing['name'])
-                      .toList(),
-                })
-            .toList();
-      } else {
-        print(
-            'Failed to fetch meal recommendations. Status code: ${response.statusCode}');
-        throw Exception('Failed to fetch meal recommendations');
-      }
+      final data = _handleResponse(response);
+      // Save token and user ID
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey, data['token']);
+      await prefs.setInt(
+          _userIdKey, data['user']['user_id']); // Access user_id from response
+      return data;
     } catch (e) {
-      print('Error fetching meal recommendations: $e');
       rethrow;
     }
   }
 
-  /// Fetch workouts (optionally filtered by category)
-  Future<List<Map<String, dynamic>>> fetchWorkouts([String? category]) async {
-    try {
-      String url = baseUrl + '/workouts';
-      if (category != null) {
-        url += '?category=$category';
-      }
-
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return (data['results'] as List)
-            .map((workout) => <String, dynamic>{
-                  'id': workout['id'],
-                  'title': workout['name'],
-                  'thumbnail': workout['image'],
-                  'duration': workout.containsKey('duration')
-                      ? workout['duration']
-                      : 'N/A',
-                  'calories': workout.containsKey('calories')
-                      ? workout['calories']
-                      : 'N/A',
-                })
-            .toList();
-      } else {
-        print('Failed to fetch workouts. Status code: ${response.statusCode}');
-        throw Exception('Failed to fetch workouts');
-      }
-    } catch (e) {
-      print('Error fetching workouts: $e');
-      rethrow;
-    }
-  }
-
-  /// Add a new workout
-  Future<void> addWorkout(Map<String, dynamic> workoutData) async {
+  Future<void> register(Map<String, dynamic> userData) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/workouts'),
+        Uri.parse('$baseUrl/auth/register'),
+        body: jsonEncode(userData),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(workoutData),
       );
-
-      if (response.statusCode == 201) {
-        print('Workout added successfully!');
-      } else {
-        print('Failed to add workout. Status code: ${response.statusCode}');
-        throw Exception('Failed to add workout');
-      }
+      _handleResponse(response);
     } catch (e) {
-      print('Error adding workout: $e');
       rethrow;
     }
   }
 
-  /// Send a friend request
-  Future<void> sendFriendRequest(int senderId, int receiverId) async {
+  Future<void> logout(int userId) async {
+    // Pass userId to logout
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final headers = await _getAuthHeaders();
+
       final response = await http.post(
-        Uri.parse('$baseUrl/friendrequests/send'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'senderId': senderId, 'receiverId': receiverId}),
+        Uri.parse('$baseUrl/users/$userId/logout'),
+        headers: headers,
       );
 
-      if (response.statusCode != 201) {
-        print(
-            'Failed to send friend request. Status code: ${response.statusCode}');
-        throw Exception('Failed to send friend request');
-      }
+      _handleResponse(response);
+
+      // Clear local storage
+      await prefs.remove(_tokenKey);
+      await prefs.remove(_userIdKey);
     } catch (e) {
-      print('Error sending friend request: $e');
       rethrow;
     }
   }
 
-  /// Accept a friend request by ID
-  Future<void> acceptFriendRequestById(int requestId) async {
+  /// User Profile Methods
+  Future<Map<String, dynamic>> getCurrentUser(int userId) async {
+    // Pass userId
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/friend-requests/$requestId/accept'),
-      );
+      final headers = await _getAuthHeaders();
 
-      if (response.statusCode != 200) {
-        print(
-            'Failed to accept friend request. Status code: ${response.statusCode}');
-        throw Exception('Failed to accept friend request');
-      }
-    } catch (e) {
-      print('Error accepting friend request: $e');
-      rethrow;
-    }
-  }
-
-  /// Reject a friend request by ID
-  Future<void> rejectFriendRequestById(int requestId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/friend-requests/$requestId/reject'),
-      );
-
-      if (response.statusCode != 200) {
-        print(
-            'Failed to reject friend request. Status code: ${response.statusCode}');
-        throw Exception('Failed to reject friend request');
-      }
-    } catch (e) {
-      print('Error rejecting friend request: $e');
-      rethrow;
-    }
-  }
-
-  /// Get pending friend requests for a user
-  Future<List<Map<String, dynamic>>> getPendingFriendRequests(
-      int userId) async {
-    try {
       final response = await http.get(
-        Uri.parse('$baseUrl/friendrequests/pending/$userId'),
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: headers,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return (data as List)
-            .map((item) => <String, dynamic>{
-                  'id': item['id'],
-                  'sender_id': item['sender_id'],
-                  'receiver_id': item['receiver_id'],
-                  'status': item['status'],
-                  'created_at': DateTime.parse(item['created_at']).toString(),
-                })
-            .toList();
-      } else {
-        print(
-            'Failed to fetch pending requests. Status code: ${response.statusCode}');
-        throw Exception('Failed to fetch pending requests');
-      }
+      return _handleResponse(response);
     } catch (e) {
-      print('Error fetching pending requests: $e');
       rethrow;
     }
   }
 
-  /// Upload Profile Picture
-  Future<void> uploadProfilePicture(int userId, File imageFile) async {
+  Future<void> updateUserSettings(
+      int userId, Map<String, dynamic> updates) async {
+    // Pass userId
     try {
-      final uri = Uri.parse('$baseUrl/users/$userId/profile-picture');
-      final request = http.MultipartRequest('POST', uri);
-      String? mimeType = lookupMimeType(imageFile.path);
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'profilePic',
+      final headers = await _getAuthHeaders();
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/$userId/settings'), // Correct endpoint
+        headers: headers,
+        body: jsonEncode(updates),
+      );
+
+      _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> uploadProfilePicture(int userId, File imageFile) async {
+    // Pass userId
+    try {
+      final headers = await _getAuthHeaders();
+      final mimeType = lookupMimeType(imageFile.path);
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/users/$userId/profile-picture'), // Correct endpoint
+      )
+        ..headers.addAll(headers)
+        ..files.add(await http.MultipartFile.fromPath(
+          'profileImage', // Change to match backend expectation
           imageFile.path,
           contentType: mimeType != null ? MediaType.parse(mimeType) : null,
-        ),
-      );
+        ));
+
       final response = await request.send();
-
-      if (response.statusCode != 200) {
-        print(
-            'Failed to upload profile picture. Status code: ${response.statusCode}');
-        throw Exception('Failed to upload profile picture');
-      }
+      final responseData = await http.Response.fromStream(response);
+      final jsonResponse = _handleResponse(responseData);
+      return jsonResponse['profilePictureUrl'];
     } catch (e) {
-      print('Error uploading profile picture: $e');
       rethrow;
     }
   }
 
-  /// Update User Settings
-  Future<void> updateUserSettings(
-      int userId, Map<String, dynamic> settings) async {
-    try {
-      final uri = Uri.parse('$baseUrl/users/$userId');
-      final response = await http.put(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(settings),
-      );
-
-      if (response.statusCode != 200) {
-        print(
-            'Failed to update user settings. Status code: ${response.statusCode}');
-        throw Exception('Failed to update user settings');
-      }
-    } catch (e) {
-      print('Error updating user settings: $e');
-      rethrow;
-    }
-  }
-
-  /// Change Password
   Future<void> changePassword(int userId, String newPassword) async {
     try {
-      final uri = Uri.parse('$baseUrl/users/$userId');
+      final headers = await _getAuthHeaders();
+
       final response = await http.put(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'password': newPassword}),
+        Uri.parse('$baseUrl/users/$userId/password'),
+        headers: headers,
+        body: jsonEncode({'newPassword': newPassword}),
       );
 
-      if (response.statusCode != 200) {
-        print('Failed to change password. Status code: ${response.statusCode}');
-        throw Exception('Failed to change password');
-      }
+      _handleResponse(response);
     } catch (e) {
-      print('Error changing password: $e');
       rethrow;
     }
   }
 
-  /// Delete Account
   Future<void> deleteAccount(int userId) async {
     try {
-      final uri = Uri.parse('$baseUrl/users/$userId');
-      final response = await http.delete(uri);
+      final headers = await _getAuthHeaders();
 
-      if (response.statusCode != 200) {
-        print('Failed to delete account. Status code: ${response.statusCode}');
-        throw Exception('Failed to delete account');
-      }
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: headers,
+      );
+
+      _handleResponse(response);
     } catch (e) {
-      print('Error deleting account: $e');
       rethrow;
     }
   }
 
-  /// Logout
-  Future<void> logout(int userId) async {
+  /// Workout Methods
+  Future<List<dynamic>> getWorkouts({String? category}) async {
     try {
-      final uri = Uri.parse('$baseUrl/users/$userId/logout');
-      final response = await http.post(uri);
+      final headers = await _getAuthHeaders();
+      final endpoint = category != null
+          ? '$baseUrl/workouts?category=$category'
+          : '$baseUrl/workouts';
 
-      if (response.statusCode != 200) {
-        print('Failed to logout. Status code: ${response.statusCode}');
-        throw Exception('Failed to logout');
-      }
+      final response = await http.get(Uri.parse(endpoint), headers: headers);
+      return _handleResponse(response)['results'];
     } catch (e) {
-      print('Error logging out: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createWorkout(
+      Map<String, dynamic> workout) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/workouts'),
+        headers: headers,
+        body: jsonEncode(workout),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Social Features
+  Future<List<dynamic>> getPendingFriendRequests(int userId) async {
+    // Pass userId
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/users/$userId/friend-requests/pending'), // Correct Endpoint
+        headers: headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> sendFriendRequest(String targetUserId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/friend-requests'),
+        headers: headers,
+        body: jsonEncode({'receiverId': targetUserId}),
+      );
+      _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> acceptFriendRequestById(int requestId) async {
+    // Pass requestId
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.put(
+        // Using PUT request
+        Uri.parse('$baseUrl/friend-requests/$requestId/accept'),
+        headers: headers,
+      );
+      _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> rejectFriendRequestById(int requestId) async {
+    // Pass requestId
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.put(
+        // Using PUT request
+        Uri.parse(
+            '$baseUrl/friend-requests/$requestId/reject'), // Correct Endpoint
+        headers: headers,
+      );
+      _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Meal Planning
+  Future<List<dynamic>> getMealPlan(DateTime date) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/meal-plans?date=${date.toIso8601String()}'),
+        headers: headers,
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<dynamic>> generateMealSuggestions(
+      List<String> ingredients) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/meals/suggestions'),
+        headers: headers,
+        body: jsonEncode({'ingredients': ingredients}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
       rethrow;
     }
   }

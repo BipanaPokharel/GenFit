@@ -28,29 +28,29 @@ class _DailyWorkoutsPageState extends State<DailyWorkoutsPage> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    fetchWorkouts(categories.first['searchTerm']);
-  }
+  // void initState() {
+  //   super.initState();
+  //   fetchWorkouts(categories.first['searchTerm']);
+  // }
 
-  Future<void> fetchWorkouts(String searchTerm) async {
-    setState(() => isLoading = true);
-    try {
-      final workouts = await apiService.fetchWorkouts(searchTerm);
-      setState(() => recommendedVideos = workouts);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch workouts: $e')),
-      );
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
+  // Future<void> fetchWorkouts(String searchTerm) async {
+  //   setState(() => isLoading = true);
+  //   try {
+  //     final workouts = await apiService.fetchWorkouts(searchTerm);
+  //     setState(() => recommendedVideos = workouts);
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to fetch workouts: $e')),
+  //     );
+  //   } finally {
+  //     setState(() => isLoading = false);
+  //   }
+  // }
 
-  void onCategorySelected(String category, String searchTerm) {
-    setState(() => selectedCategory = category);
-    fetchWorkouts(searchTerm);
-  }
+  // void onCategorySelected(String category, String searchTerm) {
+  //   setState(() => selectedCategory = category);
+  //   fetchWorkouts(searchTerm);
+  // }
 
   void onTabTapped(int index) {
     if (index == 2) {
@@ -118,9 +118,9 @@ class _DailyWorkoutsPageState extends State<DailyWorkoutsPage> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildCategoryGrid(),
-          const SizedBox(height: 24),
-          _buildWorkoutRecommendations(),
+          // _buildCategoryGrid(),
+          // const SizedBox(height: 24),
+          // _buildWorkoutRecommendations(),
         ],
       ),
     );
@@ -163,42 +163,42 @@ class _DailyWorkoutsPageState extends State<DailyWorkoutsPage> {
     );
   }
 
-  Widget _buildCategoryGrid() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: categories
-          .map((category) => CategoryCard(
-                icon: category['icon'],
-                name: category['name'],
-                isSelected: selectedCategory == category['name'],
-                onTap: () => onCategorySelected(
-                    category['name'], category['searchTerm']),
-              ))
-          .toList(),
-    );
-  }
+  // Widget _buildCategoryGrid() {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //     children: categories
+  //         .map((category) => CategoryCard(
+  //               icon: category['icon'],
+  //               name: category['name'],
+  //               isSelected: selectedCategory == category['name'],
+  //               onTap: () => onCategorySelected(
+  //                   category['name'], category['searchTerm']),
+  //             ))
+  //         .toList(),
+  //   );
+  // }
 
-  Widget _buildWorkoutRecommendations() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Recommended $selectedCategory Workouts',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (isLoading)
-          const Center(child: CircularProgressIndicator())
-        else if (recommendedVideos.isEmpty)
-          const Center(child: Text('No workouts found'))
-        else
-          ...recommendedVideos.map((video) => _WorkoutCard(video)).toList(),
-      ],
-    );
-  }
+  // Widget _buildWorkoutRecommendations() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         'Recommended $selectedCategory Workouts',
+  //         style: GoogleFonts.poppins(
+  //           fontSize: 18,
+  //           fontWeight: FontWeight.w600,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 16),
+  //       if (isLoading)
+  //         const Center(child: CircularProgressIndicator())
+  //       else if (recommendedVideos.isEmpty)
+  //         const Center(child: Text('No workouts found'))
+  //       else
+  //         ...recommendedVideos.map((video) => _WorkoutCard(video)).toList(),
+  //     ],
+  //   );
+  // }
 
   Widget _buildBottomNavBar() {
     return BottomNavigationBar(

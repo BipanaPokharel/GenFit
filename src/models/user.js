@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/dbINIT");
+const bcrypt = require("bcryptjs");
 
 const User = sequelize.define(
   "User",
@@ -12,11 +13,18 @@ const User = sequelize.define(
     username: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: false,
+      validate: {
+        len: [3, 30]
+      }
     },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
+      validate: {
+        isEmail: true
+      }
     },
     password: {
       type: DataTypes.STRING,
@@ -24,16 +32,30 @@ const User = sequelize.define(
     },
     profile_pic: {
       type: DataTypes.STRING,
-      allowNull: true,
+      get() {
+        const rawValue = this.getDataValue('profile_pic');
+        return rawValue ? `${process.env.BASE_URL}${rawValue}` : null;
+      }
     },
-    fitness_goal: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
+    settings: {
+      type: DataTypes.JSON,
+      defaultValue: {
+        theme: 'light',
+        emailNotifications: true,
+        pushNotifications: true
+      }
+    }
   },
   {
     tableName: "User",
-    timestamps: false,
+    timestamps: true,
+    hooks: {
+      beforeSave: async (user) => {
+        if (user.changed('password')) {
+          user.password = await bcrypt.hash(user.password, 10);
+        }
+      }
+    }
   }
 );
 

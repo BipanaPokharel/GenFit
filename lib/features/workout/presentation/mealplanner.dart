@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:fyp/utils/api_service.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class MealPlanner extends StatefulWidget {
-  const MealPlanner({super.key});
+  const MealPlanner({Key? key});
 
   @override
   State<MealPlanner> createState() => _MealPlannerState();
@@ -14,6 +13,7 @@ class _MealPlannerState extends State<MealPlanner> {
   DateTime selectedDate = DateTime.now();
   List<String> weekDays = [];
   Map<String, List<String>> userIngredients = {};
+  List<dynamic> mealRecommendations = []; // Store meal recommendations
 
   // Meal types with their details
   final List<Map<String, dynamic>> mealTypes = [
@@ -43,6 +43,7 @@ class _MealPlannerState extends State<MealPlanner> {
   void initState() {
     super.initState();
     _generateWeekDays();
+    _loadMealRecommendations(); // Load meal recommendations on init
   }
 
   void _generateWeekDays() {
@@ -54,6 +55,21 @@ class _MealPlannerState extends State<MealPlanner> {
       return DateFormat('d').format(date);
     });
     setState(() {});
+  }
+
+  // Load meal recommendations from API
+  Future<void> _loadMealRecommendations() async {
+    final apiService = ApiService("http://localhost:3000/api");
+    try {
+      List<dynamic> recommendations =
+          await apiService.generateMealSuggestions(["chicken", "rice"]);
+      setState(() {
+        mealRecommendations = recommendations;
+      });
+      print("Meal Recommendations: $recommendations");
+    } catch (e) {
+      print("Error fetching recommendations: $e");
+    }
   }
 
   Widget _buildDateSelector() {
@@ -190,155 +206,36 @@ class _MealPlannerState extends State<MealPlanner> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton.icon(
+                  ElevatedButton(
                     onPressed: () {
-                      _showAddMealDialog(mealType);
+                      // Handle meal selection
                     },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    child: const Text('Add to Plan'),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 16),
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               child: Image.network(
                 imageUrl,
-                width: 100,
                 height: 100,
+                width: 100,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.restaurant),
-                  );
-                },
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _showAddMealDialog(String mealType) async {
-    List<String> ingredients = [];
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add $mealType'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Enter ingredients (comma-separated)',
-                hintText: 'e.g., chicken, rice, vegetables',
-              ),
-              onChanged: (value) {
-                ingredients = value.split(',').map((e) => e.trim()).toList();
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                userIngredients[mealType] = ingredients;
-              });
-              Navigator.pop(context);
-              _showRecommendationDialog(mealType, ingredients);
-            },
-            child: const Text('Get Recommendations'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showRecommendationDialog(
-      String mealType, List<String> ingredients) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://localhost:3000/api/user/recommendations'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'ingredients': ingredients}),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> recommendedMeals =
-            jsonDecode(response.body)['recommendations'];
-
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Recommendations for $mealType'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Based on your ingredients: ${ingredients.join(", ")}'),
-                  const SizedBox(height: 16),
-                  const Text('Recommended meals:'),
-                  const SizedBox(height: 8),
-                  ...recommendedMeals.map((meal) => Card(
-                        child: ListTile(
-                          title: Text(meal['meal']),
-                          subtitle: meal['prepTime'] != null
-                              ? Text('Preparation time: ${meal['prepTime']}')
-                              : null,
-                          trailing: const Icon(Icons.restaurant_menu),
-                        ),
-                      )),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$mealType added to your plan'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                child: const Text('Add to Plan'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        throw Exception('Failed to fetch recommendations');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to fetch recommendations'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   @override
@@ -349,27 +246,46 @@ class _MealPlannerState extends State<MealPlanner> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
-      body: ListView(
-        children: [
-          _buildDateSelector(),
-          ...mealTypes.map((meal) => _buildMealCard(
-                meal['type'],
-                meal['calories'],
-                meal['image'],
-              )),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Create custom meal plan (Coming soon)'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildDateSelector(),
+            // Display meal recommendations
+            if (mealRecommendations.isNotEmpty)
+              Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      "Recommended Meals",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: mealRecommendations.length,
+                    itemBuilder: (context, index) {
+                      final meal = mealRecommendations[index];
+                      return _buildMealCard(
+                        meal['meal'],
+                        '400-500', // Replace with actual calorie count if available
+                        'https://placekitten.com/200/200?image=${index + 5}', // Replace with actual image URL if available
+                      );
+                    },
+                  ),
+                ],
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text("Loading meal recommendations..."),
+              ),
+          ],
+        ),
       ),
     );
   }

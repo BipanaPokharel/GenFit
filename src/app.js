@@ -30,15 +30,5 @@ app._router.stack.forEach(function (r) {
   }
 });
 
-// Error handling for 404
-app.use((req, res, next) => {
-  res.status(404).json({ message: "Not Found" });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Internal server error", error: err.message });
-});
 
 module.exports = app;

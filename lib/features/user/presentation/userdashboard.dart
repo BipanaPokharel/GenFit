@@ -59,17 +59,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _apiService = ApiService("http://localhost:3000/api");
-    _loadUserData();
-    _loadUserSettings();
+    //_loadUserData();  // Load data in FutureBuilder
+    //_loadUserSettings(); // Load data in FutureBuilder
   }
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      userId = prefs.getInt('userId');
+      userId = prefs.getInt('user_id'); // Corrected key
       token = prefs.getString('token');
     });
-    _loadPendingFriendRequests();
+    //_loadPendingFriendRequests(); // Load after userId is available
   }
 
   Future<void> _loadUserSettings() async {
@@ -99,7 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _uploadProfilePicture() async {
-    if (_profileImage == null) return;
+    if (_profileImage == null || userId == null) return; //Check userId
     try {
       await _apiService.uploadProfilePicture(userId!, _profileImage!);
       _showSuccessSnackBar('Profile picture updated successfully');
@@ -109,6 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _saveSettings() async {
+    if (userId == null) return; //Check userId
     try {
       final prefs = await SharedPreferences.getInstance();
       // Save user settings to SharedPreferences
@@ -217,6 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _changePassword() async {
+    if (userId == null) return;
     if (_passwordController.text != _confirmPasswordController.text) {
       _showErrorSnackBar('Passwords do not match');
       return;
@@ -282,6 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _deleteAccount() async {
+    if (userId == null) return;
     try {
       await _apiService.deleteAccount(userId!);
       Navigator.pop(context);
@@ -299,10 +302,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         pendingRequests = requests
             .map((item) => FriendRequest(
                   id: item['id'],
-                  senderId: item['sender_id'],
-                  receiverId: item['receiver_id'],
+                  senderId: item['senderId'], // senderId not sender_id
+                  receiverId: item['receiverId'], // receiverId not receiver_id
                   status: item['status'],
-                  createdAt: DateTime.parse(item['created_at']),
+                  createdAt: DateTime.parse(
+                      item['createdAt']), // createdAt not created_at
                 ))
             .toList();
       });
@@ -350,6 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _logout() async {
+    if (userId == null) return;
     try {
       await _apiService.logout(userId!);
       final prefs = await SharedPreferences.getInstance();
@@ -473,11 +478,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 2,
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
               blurRadius: 7,
               offset: const Offset(0, 3),
             ),
@@ -494,424 +499,288 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSettingsContent(bool isDesktop) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'User Profile',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.titleLarge!.color,
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'User Profile',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.titleLarge!.color,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: Stack(
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Theme.of(context).highlightColor,
+                backgroundImage:
+                    _profileImage != null ? FileImage(_profileImage!) : null,
+                child: _profileImage == null
+                    ? Icon(Icons.camera_alt,
+                        size: 40, color: Theme.of(context).iconTheme.color)
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(color: Theme.of(context).hintColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                prefixIcon: Icon(Icons.person,
+                    color: Theme.of(context).iconTheme.color),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                labelStyle: TextStyle(color: Theme.of(context).hintColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                prefixIcon:
+                    Icon(Icons.email, color: Theme.of(context).iconTheme.color),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneController,
+              decoration: InputDecoration(
+                labelText: 'Phone',
+                labelStyle: TextStyle(color: Theme.of(context).hintColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                prefixIcon:
+                    Icon(Icons.phone, color: Theme.of(context).iconTheme.color),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
               children: [
-                CircleAvatar(
-                  radius: 70,
-                  backgroundColor: Theme.of(context).highlightColor,
-                  backgroundImage:
-                      _profileImage != null ? FileImage(_profileImage!) : null,
-                  child: _profileImage == null
-                      ? Icon(Icons.person,
-                          size: 70, color: Theme.of(context).iconTheme.color)
-                      : null,
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: InkWell(
-                    onTap: _pickImage,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.edit, color: Colors.white),
-                    ),
-                  ),
-                ),
+                Icon(Icons.notifications,
+                    color: Theme.of(context).iconTheme.color),
+                const SizedBox(width: 12),
+                Text('Notifications:',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge!.color)),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-          TextFormField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: 'Name',
-              labelStyle: TextStyle(color: Theme.of(context).hintColor),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15.0),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-              prefixIcon:
-                  Icon(Icons.person, color: Theme.of(context).iconTheme.color),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _emailController,
-            decoration: InputDecoration(
-              labelText: 'Email',
-              labelStyle: TextStyle(color: Theme.of(context).hintColor),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15.0),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-              prefixIcon:
+            SwitchListTile(
+              title: Text('Email Notifications',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge!.color)),
+              value: _emailNotifications,
+              onChanged: (bool value) {
+                setState(() {
+                  _emailNotifications = value;
+                });
+              },
+              secondary:
                   Icon(Icons.email, color: Theme.of(context).iconTheme.color),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _phoneController,
-            decoration: InputDecoration(
-              labelText: 'Phone',
-              labelStyle: TextStyle(color: Theme.of(context).hintColor),
-              border: OutlineInputBorder(
+              tileColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-              prefixIcon:
-                  Icon(Icons.phone, color: Theme.of(context).iconTheme.color),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Icon(Icons.notifications,
-                  color: Theme.of(context).iconTheme.color),
-              const SizedBox(width: 10),
-              Text(
-                'Notifications',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.titleLarge!.color,
-                ),
-              ),
-            ],
-          ),
-          SwitchListTile(
-            title: Text(
-              'Email Notifications',
-              style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge!.color),
-            ),
-            value: _emailNotifications,
-            onChanged: (bool value) {
-              setState(() {
-                _emailNotifications = value;
-              });
-            },
-            secondary:
-                Icon(Icons.email, color: Theme.of(context).iconTheme.color),
-            tileColor: Theme.of(context).cardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-          ),
-          SwitchListTile(
-            title: Text(
-              'Push Notifications',
-              style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge!.color),
-            ),
-            value: _pushNotifications,
-            onChanged: (bool value) {
-              setState(() {
-                _pushNotifications = value;
-              });
-            },
-            secondary:
-                Icon(Icons.message, color: Theme.of(context).iconTheme.color),
-            tileColor: Theme.of(context).cardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Icon(Icons.color_lens, color: Theme.of(context).iconTheme.color),
-              const SizedBox(width: 10),
-              Text(
-                'Theme',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.titleLarge!.color,
-                ),
-              ),
-            ],
-          ),
-          RadioListTile<ThemeMode>(
-            title: Text(
-              'Light',
-              style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge!.color),
-            ),
-            value: ThemeMode.light,
-            groupValue: _selectedTheme,
-            onChanged: (ThemeMode? value) {
-              setState(() {
-                _selectedTheme = value!;
-              });
-            },
-            secondary:
-                Icon(Icons.wb_sunny, color: Theme.of(context).iconTheme.color),
-            tileColor: Theme.of(context).cardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-          ),
-          RadioListTile<ThemeMode>(
-            title: Text(
-              'Dark',
-              style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge!.color),
-            ),
-            value: ThemeMode.dark,
-            groupValue: _selectedTheme,
-            onChanged: (ThemeMode? value) {
-              setState(() {
-                _selectedTheme = value!;
-              });
-            },
-            secondary: Icon(Icons.brightness_3,
-                color: Theme.of(context).iconTheme.color),
-            tileColor: Theme.of(context).cardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-              ),
-              onPressed: _saveSettings,
-              child:
-                  const Text('Save Settings', style: TextStyle(fontSize: 18)),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Divider(),
-          ListTile(
-            leading: Icon(Icons.lock, color: Theme.of(context).iconTheme.color),
-            title: Text(
-              'Change Password',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).textTheme.bodyLarge!.color,
               ),
             ),
-            onTap: _showChangePasswordDialog,
-          ),
-          ListTile(
-            leading: Icon(Icons.delete_forever, color: Colors.red[700]),
-            title: Text(
-              'Delete Account',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.red[700],
+            SwitchListTile(
+              title: Text('Push Notifications',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge!.color)),
+              value: _pushNotifications,
+              onChanged: (bool value) {
+                setState(() {
+                  _pushNotifications = value;
+                });
+              },
+              secondary:
+                  Icon(Icons.android, color: Theme.of(context).iconTheme.color),
+              tileColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
               ),
             ),
-            onTap: _showDeleteAccountDialog,
-          ),
-          const SizedBox(height: 20),
-          if (!isDesktop) _buildFriendRequestsSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFriendRequestsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Friend Requests',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).textTheme.titleLarge!.color,
-          ),
-        ),
-        const SizedBox(height: 10),
-        if (pendingRequests.isEmpty)
-          Text(
-            'No pending friend requests.',
-            style:
-                TextStyle(color: Theme.of(context).textTheme.bodyLarge!.color),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: pendingRequests.length,
-            itemBuilder: (context, index) {
-              final request = pendingRequests[index];
-              return Card(
-                color: Theme.of(context).cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
-                child: ListTile(
-                  leading: const Icon(Icons.person_add, color: Colors.blue),
-                  title: Text('Request from User ${request.senderId}',
-                      style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge!.color)),
-                  subtitle: Text('Sent on ${request.createdAt.toString()}',
-                      style: TextStyle(color: Theme.of(context).hintColor)),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon:
-                            const Icon(Icons.check_circle, color: Colors.green),
-                        onPressed: () => _acceptFriendRequest(request.id),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.red),
-                        onPressed: () => _rejectFriendRequest(request.id),
-                      ),
-                    ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Icon(Icons.brightness_6,
+                    color: Theme.of(context).iconTheme.color),
+                const SizedBox(width: 12),
+                Text('Theme:',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.bodyLarge!.color)),
+              ],
+            ),
+            RadioListTile<ThemeMode>(
+              title: Text('Light Mode',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge!.color)),
+              value: ThemeMode.light,
+              groupValue: _selectedTheme,
+              onChanged: (ThemeMode? value) {
+                setState(() {
+                  _selectedTheme = value!;
+                });
+              },
+              secondary: const Icon(Icons.wb_sunny, color: Colors.amber),
+              tileColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+            ),
+            RadioListTile<ThemeMode>(
+              title: Text('Dark Mode',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge!.color)),
+              value: ThemeMode.dark,
+              groupValue: _selectedTheme,
+              onChanged: (ThemeMode? value) {
+                setState(() {
+                  _selectedTheme = value!;
+                });
+              },
+              secondary: const Icon(Icons.nights_stay, color: Colors.grey),
+              tileColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.0),
                   ),
                 ),
-              );
-            },
-          ),
-        const SizedBox(height: 20),
-      ],
+                onPressed: _saveSettings,
+                child: const Text('Save Settings'),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                ),
+                onPressed: _showChangePasswordDialog,
+                child: const Text('Change Password'),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[700],
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                ),
+                onPressed: _showDeleteAccountDialog,
+                child: const Text('Delete Account'),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > _tabletBreakpoint;
-
-    return Theme(
-      data: ThemeData(
-        brightness: _selectedTheme == ThemeMode.dark
-            ? Brightness.dark
-            : Brightness.light,
-        primarySwatch: Colors.blue,
-        dialogBackgroundColor:
-            _selectedTheme == ThemeMode.dark ? Colors.grey[800] : Colors.white,
-        cardColor:
-            _selectedTheme == ThemeMode.dark ? Colors.grey[700] : Colors.white,
-        highlightColor: _selectedTheme == ThemeMode.dark
-            ? Colors.grey[600]
-            : Colors.grey[200],
-        hintColor: _selectedTheme == ThemeMode.dark
-            ? Colors.grey[400]
-            : Colors.grey[600],
-        iconTheme: IconThemeData(
-            color:
-                _selectedTheme == ThemeMode.dark ? Colors.white : Colors.black),
-        textTheme: TextTheme(
-          titleLarge: TextStyle(
-              color: _selectedTheme == ThemeMode.dark
-                  ? Colors.white
-                  : Colors.black),
-          bodyLarge: TextStyle(
-              color: _selectedTheme == ThemeMode.dark
-                  ? Colors.white
-                  : Colors.black),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          fillColor: _selectedTheme == ThemeMode.dark
-              ? Colors.grey[900]
-              : Colors.grey[100],
-        ),
-      ),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_getPageTitle()),
-          backgroundColor: Theme.of(context).primaryColor,
-        ),
-        body: Row(
-          children: [
-            if (isDesktop) _buildNavigation(true),
-            Expanded(
-              child: _buildContent(isDesktop),
-            ),
-            if (isDesktop)
-              SizedBox(
-                width: 300,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildFriendRequestsSection(),
-                ),
-              ),
-          ],
-        ),
-        bottomNavigationBar: _buildBottomNavigationBar(),
-        drawer: isDesktop
+    final isDesktop = MediaQuery.of(context).size.width > _tabletBreakpoint;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_getPageTitle()),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        elevation: 2,
+        leading: isDesktop
             ? null
-            : Drawer(
-                child: _buildNavigation(false),
+            : IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  setState(() {
+                    _isSidebarExpanded = !_isSidebarExpanded;
+                  });
+                },
               ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              if (userId != null) {
+                _loadPendingFriendRequests(); // Manually refresh
+              }
+            },
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      selectedItemColor: Theme.of(context).primaryColor,
-      unselectedItemColor: Colors.grey[600],
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-      currentIndex: _selectedItem.index,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.book),
-          label: 'Library',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.fitness_center),
-          label: 'Workouts',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.restaurant_menu),
-          label: 'Meal Planner',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: 'Chat',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-      ],
-      onTap: (index) {
-        setState(() {
-          _selectedItem = NavigationItem.values[index];
-        });
-      },
+      body: FutureBuilder<void>(
+        future:
+            Future.wait([_loadUserData(), _loadUserSettings()]), // Load both
+        builder: (BuildContext context, AsyncSnapshot<List<void>> snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // Data is loaded, build the UI
+            return Row(
+              children: [
+                if (isDesktop) _buildNavigation(true),
+                if (!isDesktop && _isSidebarExpanded)
+                  SizedBox(
+                    width: 250,
+                    child: _buildNavigation(false),
+                  ),
+                Expanded(
+                  child: _buildContent(isDesktop),
+                ),
+              ],
+            );
+          } else {
+            // Still loading, show a loading indicator
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
     );
   }
 }

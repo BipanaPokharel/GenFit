@@ -15,7 +15,7 @@ exports.login = async (req, res) => {
     if (!user) {
       // Check if user exists
       console.log("User not found");
-      return res.status(401).json({ message: "Invalid email or password" }); // Return error if not found
+      return res.status(401).json({ message: "Invalid email or password" }); 
     }
 
     // Compare password using bcryptjs
@@ -25,7 +25,7 @@ exports.login = async (req, res) => {
     if (!validPassword) {
       // Compare password
       console.log("Invalid password");
-      return res.status(401).json({ message: "Invalid email or password" }); // Return error if password is invalid
+      return res.status(401).json({ message: "Invalid email or password" }); 
     }
 
     // Generate JWT token
@@ -48,8 +48,8 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error("Login error:", error); // Log the error for debugging
-    console.log("Error details:", error.message); // Log the error message for more context
+    console.error("Login error:", error); 
+    console.log("Error details:", error.message); 
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });

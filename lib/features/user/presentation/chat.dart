@@ -85,6 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_controller.text.isNotEmpty) {
       final message = _controller.text.trim();
 
+      // Emit the 'send_message' event directly through Socket.IO
       socket.emit('send_message', {
         'senderId': widget.userId,
         'receiverId': widget.receiverId,
