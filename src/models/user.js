@@ -59,4 +59,10 @@ const User = sequelize.define(
   }
 );
 
+// Associations
+User.associate = function(models) {
+  User.hasMany(models.Post, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  // Add other associations as needed
+};
+
 module.exports = User;

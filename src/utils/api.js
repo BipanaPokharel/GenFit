@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs/promises'); // Use fs.promises for async file operations
+const fs = require('fs/promises'); 
 const { parse } = require('csv-parse');
 
 // Function to fetch meal recommendations from CSV file
