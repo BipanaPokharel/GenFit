@@ -22,7 +22,7 @@ const initializeDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log("Database connection established.");
-    await sequelize.sync({ alter: false }); // Prevent altering existing schema
+    await sequelize.sync({ alter: false });
     console.log("Database models synchronized.");
     return true;
   } catch (error) {

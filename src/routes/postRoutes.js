@@ -1,16 +1,17 @@
-// In postRoutes.js
 const express = require('express');
 const router = express.Router();
 const postController = require('../controllers/postController');
 
-router.post('/posts', postController.createPost);
-router.get('/posts/:id', postController.getPostById);
-router.put('/posts/:id', postController.updatePost);
-router.delete('/posts/:id', postController.deletePost);
+// POST /api/posts
+router.post('/', postController.createPost);
 
-// Test route
-router.get('/test', (req, res) => {
-    res.json({ message: 'Test route working' });
-});
+// GET /api/posts/:id
+router.get('/:id', postController.getPostById);
+
+// PUT /api/posts/:id
+router.put('/:id', postController.updatePost);
+
+// DELETE /api/posts/:id
+router.delete('/:id', postController.deletePost);
 
 module.exports = router;

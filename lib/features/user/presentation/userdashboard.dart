@@ -756,31 +756,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<void>(
-        future:
-            Future.wait([_loadUserData(), _loadUserSettings()]), // Load both
-        builder: (BuildContext context, AsyncSnapshot<List<void>> snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            // Data is loaded, build the UI
-            return Row(
-              children: [
-                if (isDesktop) _buildNavigation(true),
-                if (!isDesktop && _isSidebarExpanded)
-                  SizedBox(
-                    width: 250,
-                    child: _buildNavigation(false),
-                  ),
-                Expanded(
-                  child: _buildContent(isDesktop),
-                ),
-              ],
-            );
-          } else {
-            // Still loading, show a loading indicator
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
+      // body: FutureBuilder<void>(
+      //   future:
+      //       Future.wait([_loadUserData(), _loadUserSettings()]), // Load both
+      //   builder: (BuildContext context, AsyncSnapshot<List<void>> snapshot) {
+      //     if (snapshot.connectionState == ConnectionState.done) {
+      //       // Data is loaded, build the UI
+      //       return Row(
+      //         children: [
+      //           if (isDesktop) _buildNavigation(true),
+      //           if (!isDesktop && _isSidebarExpanded)
+      //             SizedBox(
+      //               width: 250,
+      //               child: _buildNavigation(false),
+      //             ),
+      //           Expanded(
+      //             child: _buildContent(isDesktop),
+      //           ),
+      //         ],
+      //       );
+      //     } else {
+      //       // Still loading, show a loading indicator
+      //       return const Center(child: CircularProgressIndicator());
+      //     }
+      //   },
+      // ),
     );
   }
 }
