@@ -1,5 +1,4 @@
-// controllers/friendRequestController.js
-const FriendRequest = require('../models/friendrequest'); 
+const FriendRequest = require('../models/friendrequest');
 
 class FriendRequestController {
   // Send a friend request
@@ -39,14 +38,23 @@ class FriendRequestController {
     }
   }
 
-  // Reject a friend request
+  // Reject a friend request (updated to work with PUT)
   static async rejectFriendRequest(req, res) {
     const { id } = req.params;
 
     try {
+      // Choose ONE approach below:
+
+      // Option 1: Delete the request (original behavior)
       const deleted = await FriendRequest.destroy({ where: { id } });
 
-      if (deleted) {
+      // Option 2: Update status to 'rejected' (recommended)
+      // const [updated] = await FriendRequest.update(
+      //   { status: 'rejected' },
+      //   { where: { id } }
+      // );
+
+      if (deleted) { // or if (updated) for Option 2
         return res.status(200).json({ message: 'Friend request rejected' });
       }
       return res.status(404).json({ error: 'Friend request not found' });

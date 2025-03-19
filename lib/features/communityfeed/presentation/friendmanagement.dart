@@ -33,7 +33,6 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch requests when screen loads
     _fetchPendingRequests();
   }
 
@@ -85,21 +84,39 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     }
   }
 
-  Future<void> _handleRequestAction(int requestId, bool accept) async {
+  Future<void> _acceptFriendRequest(int requestId) async {
     try {
       final response = await http.put(
         Uri.parse(
-            'http://localhost:3000/api/friend-requests/${accept ? "accept" : "reject"}/$requestId'),
+            'http://localhost:3000/api/friend-requests/accept/$requestId'),
       );
 
       if (response.statusCode == 200) {
-        _showSnackBar(accept ? 'Request accepted' : 'Request rejected');
+        _showSnackBar('Friend request accepted');
         _fetchPendingRequests();
       } else {
-        _showSnackBar('Failed to ${accept ? "accept" : "reject"} request');
+        _showSnackBar('Failed to accept request');
       }
     } catch (e) {
       _showSnackBar('Error processing request');
+    }
+  }
+
+  Future<void> _rejectFriendRequest(int requestId) async {
+    try {
+      final response = await http.put(
+        Uri.parse(
+            'http://localhost:3000/api/friend-requests/reject/$requestId'),
+      );
+
+      if (response.statusCode == 200) {
+        _showSnackBar('Friend request rejected');
+        _fetchPendingRequests();
+      } else {
+        _showSnackBar('Failed to reject request');
+      }
+    } catch (e) {
+      _showSnackBar('Error rejecting request');
     }
   }
 
@@ -221,14 +238,14 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                             icon: const Icon(Icons.check, color: Colors.green),
                             label: const Text('Accept'),
                             onPressed: () =>
-                                _handleRequestAction(request['id'], true),
+                                _acceptFriendRequest(request['id']),
                           ),
                           const SizedBox(width: 8),
                           TextButton.icon(
                             icon: const Icon(Icons.close, color: Colors.red),
                             label: const Text('Reject'),
                             onPressed: () =>
-                                _handleRequestAction(request['id'], false),
+                                _rejectFriendRequest(request['id']),
                           ),
                         ],
                       ),
@@ -245,4 +262,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     _receiverController.dispose();
     super.dispose();
   }
+}
+
+void main() {
+  runApp(MyApp());
 }

@@ -13,7 +13,6 @@ const User = sequelize.define(
     username: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: false,
       validate: {
         len: [3, 30]
       }
@@ -48,7 +47,7 @@ const User = sequelize.define(
   },
   {
     tableName: "User",
-    timestamps: true,
+    timestamps: false, // Changed from true to false
     hooks: {
       beforeSave: async (user) => {
         if (user.changed('password')) {
