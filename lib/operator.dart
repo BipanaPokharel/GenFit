@@ -9,10 +9,12 @@ import 'package:fyp/features/presentation/login/login.dart';
 import 'package:fyp/features/presentation/onboarding/onboarding.dart';
 import 'package:fyp/features/presentation/password/password.dart';
 import 'package:fyp/features/presentation/signup/signup.dart';
-import 'package:fyp/features/user/presentation/userdashboard.dart';
+// import 'package:fyp/features/user/presentation/userdashboard.dart';
 import 'package:fyp/features/workout/journaling.dart';
 import 'package:fyp/features/workout/presentation/equipment_listing.dart';
 import 'package:fyp/features/workout/presentation/mealplanner.dart';
+// import 'package:fyp/features/workout/presentation/pinterest.dart';
+// import 'package:fyp/features/workout/presentation/setting.dart';
 import 'package:fyp/features/workout/presentation/workout.dart';
 import 'package:fyp/features/user/presentation/chat.dart';
 
@@ -39,6 +41,14 @@ class Operator extends StatelessWidget {
                   );
                 },
               ),
+              // ListTile(
+              //   title: const Text('PinterestFeed'),
+              //   onTap: () {
+              //     Navigator.of(context).push(
+              //       MaterialPageRoute(builder: (context) => PinterestFeed()),
+              //     );
+              //   },
+              // ),
               ListTile(
                 title: const Text('JournalPage'),
                 onTap: () {
@@ -134,18 +144,18 @@ class Operator extends StatelessWidget {
                   );
                 },
               ),
-              ListTile(
-                title: const Text('UserProfile'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => DashboardScreen(
-                        onLogout: () {},
-                      ),
-                    ),
-                  );
-                },
-              ),
+              // ListTile(
+              //   title: const Text('UserProfile'),
+              //   onTap: () {
+              //     Navigator.of(context).push(
+              //       MaterialPageRoute(
+              //         builder: (context) => DashboardScreen(
+              //           onLogout: () {},
+              //         ),
+              //       ),
+              //     );
+              //   },
+              // ),
               ListTile(
                 title: const Text('Notifications'),
                 onTap: () {

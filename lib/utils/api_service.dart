@@ -127,7 +127,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
 
       final response = await http.put(
-        Uri.parse('$baseUrl/users/$userId/settings'), // Correct endpoint
+        Uri.parse('$baseUrl/users/$userId/settings'),
         headers: headers,
         body: jsonEncode(updates),
       );
@@ -286,20 +286,6 @@ class ApiService {
     }
   }
 
-  /// Meal Planning
-  Future<List<dynamic>> getMealPlan(DateTime date) async {
-    try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/meal-plans?date=${date.toIso8601String()}'),
-        headers: headers,
-      );
-      return _handleResponse(response);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   Future<List<dynamic>> generateMealSuggestions(
       List<String> ingredients) async {
     try {
@@ -309,9 +295,67 @@ class ApiService {
         headers: headers,
         body: jsonEncode({'ingredients': ingredients}),
       );
+
+      final responseData = _handleResponse(response);
+
+      if (responseData == null ||
+          responseData['success'] == false ||
+          !responseData.containsKey('matches')) {
+        return [];
+      }
+
+      return List<dynamic>.from(responseData['matches']);
+    } catch (e) {
+      throw Exception('Failed to get meal suggestions: ${e.toString()}');
+    }
+  }
+
+  Future<void> saveMealToPlan(DateTime date, dynamic meal) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt(_userIdKey);
+      final headers = await _getAuthHeaders();
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/meal-plans'),
+        headers: headers,
+        body: jsonEncode({
+          'user_id': userId,
+          'meal_date': date.toIso8601String().split('T')[0],
+          'meal_name': meal['meal'],
+          'ingredients': meal['ingredients'],
+          'meal_type': meal['type'],
+          'calories': meal['calories'],
+          'prep_time': meal['details']['prepTime'],
+          'cook_time': meal['details']['cookTime'],
+          'meal_image_url': meal['details']['url']
+        }),
+      );
+
+      final responseData = _handleResponse(response);
+      if (!responseData['success']) {
+        throw Exception('Failed to save meal');
+      }
+    } catch (e) {
+      throw Exception('Save failed: ${e.toString()}');
+    }
+  }
+
+  Future<List<dynamic>> getSavedMeals(DateTime date) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt(_userIdKey);
+      final headers = await _getAuthHeaders();
+
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/meal-plans?date=${date.toIso8601String().split('T')[0]}&user_id=$userId'),
+        headers: headers,
+      );
+
       return _handleResponse(response);
     } catch (e) {
-      rethrow;
+      throw Exception('Failed to load meals: ${e.toString()}');
     }
   }
 }

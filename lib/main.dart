@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fyp/features/presentation/onboarding/onboarding.dart';
 import 'package:fyp/operator.dart';
 
 void main() {
@@ -11,7 +12,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Set debugShowCheckedModeBanner to false to remove the debug banner
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),

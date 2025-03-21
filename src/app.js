@@ -1,5 +1,8 @@
 const express = require("express");
 const app = express();
+const cors = require('cors');
+
+// Import route files
 const postsRouter = require('./routes/postRoutes');
 const signupRoutes = require("./routes/signupRoutes");
 const loginRoutes = require("./routes/loginRoutes");
@@ -9,25 +12,25 @@ const journalRoutes = require("./routes/journalRoutes");
 const workoutRoutes = require("./routes/workoutRoutes");
 const friendRequestRoutes = require("./routes/friendRequestRoutes");
 const chatRoutes = require("./routes/chatRoutes");
-const mealRoutes = require("./utils/api");
-const cors = require('cors');
+const mealRoutes = require("./routes/mealRoutes"); // Only one declaration here
 
-// Middleware to parse JSON bodies
+// Middleware
 app.use(express.json());
 app.use(cors());
 
-// Use routes
+// Register routes
 app.use("/api/posts", postsRouter);
-app.use("/api", mealRoutes);
+app.use("/api/meals", mealRoutes);  // This should be the only mealRoutes reference
 app.use("/api/signup", signupRoutes);
 app.use("/api/login", loginRoutes);
 app.use("/api/forgot-password", forgetPasswordRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/journal", journalRoutes);
-app.use("/api/workouts", workoutRoutes); 
+app.use("/api/workouts", workoutRoutes);
 app.use("/api/friend-requests", friendRequestRoutes);
 app.use("/api/chat", chatRoutes);
 
+// ... rest of your error handlers
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ message: "Not Found" });
