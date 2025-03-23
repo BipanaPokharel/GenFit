@@ -24,201 +24,246 @@ class Operator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Operator Page'),
+      appBar: AppBar(
+        title: const Text('Operator Page'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // **Social**
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Text('Social',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: const Text('Chat'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ChatScreen(userId: 1, receiverId: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Community Feed'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const CommunityFeed(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Journal Page'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const JournalPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // **Health & Fitness**
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Text('Health & Fitness',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: const Text('Workout'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const Workout(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Meal Planner'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const MealPlanner(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('BMI Calculator'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const BMICalculator(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // **Workout Tools**
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Text('Workout Tools',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: const Text('Equipment Listing'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const DailyWorkoutsPage(
+                              username: 'bipana',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Friend Requests'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => FriendRequestsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Notifications'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const Notifications(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // **Authentication**
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Text('Authentication',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: const Text('Login'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const Login(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Sign Up'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SignUp(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Reset Password'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // **Onboarding**
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    const Text('Onboarding',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: const Text('Fitness OnBoard'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const FitnessOnBoard(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Initial'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const Initial(),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      title: const Text('Second Page'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const Second(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ListTile(
-                title: const Text('workout'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const Workout(),
-                    ),
-                  );
-                },
-              ),
-              // ListTile(
-              //   title: const Text('PinterestFeed'),
-              //   onTap: () {
-              //     Navigator.of(context).push(
-              //       MaterialPageRoute(builder: (context) => PinterestFeed()),
-              //     );
-              //   },
-              // ),
-              ListTile(
-                title: const Text('JournalPage'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const JournalPage(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('chat'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const ChatScreen(userId: 1, receiverId: 2),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('FitnessOnBoard'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const FitnessOnBoard(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('Login'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const Login(),
-                    ),
-                  );
-                },
-              ),
-
-              ListTile(
-                title: const Text('signup'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const SignUp(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('reset'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const ForgotPasswordPage(),
-                    ),
-                  );
-                },
-              ),
-
-              ListTile(
-                title: const Text('EquipmentTypeSelector'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const DailyWorkoutsPage(
-                        username: 'bipana',
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('communityfeed'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const CommunityFeed(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('FriendRequest'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => FriendRequestsScreen(),
-                    ),
-                  );
-                },
-              ),
-              // ListTile(
-              //   title: const Text('UserProfile'),
-              //   onTap: () {
-              //     Navigator.of(context).push(
-              //       MaterialPageRoute(
-              //         builder: (context) => DashboardScreen(
-              //           onLogout: () {},
-              //         ),
-              //       ),
-              //     );
-              //   },
-              // ),
-              ListTile(
-                title: const Text('Notifications'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const Notifications(),
-                    ),
-                  );
-                },
-              ),
-
-              ListTile(
-                title: const Text('mealplanner'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const MealPlanner(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('Initial'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const Initial(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('secondpage'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const Second(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('BMICalculatorApp'),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const BMICalculator(),
-                    ),
-                  );
-                },
-              ),
-              // ListTile(
-              //   title: const Text('userdashboard'),
-              //   onTap: () {
-              //     Navigator.of(context).push(
-              //       MaterialPageRoute(
-              //         builder: (context) => ProfileScreen(),
-              //       ),
-              //     );
-              //   },
-              // ),
-            ],
-          ),
-        ));
+      ),
+    );
   }
 }

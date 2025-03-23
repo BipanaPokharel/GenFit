@@ -1,3 +1,4 @@
+// api_service.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
@@ -276,8 +277,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final response = await http.put(
         // Using PUT request
-        Uri.parse(
-            '$baseUrl/friend-requests/$requestId/reject'), // Correct Endpoint
+        Uri.parse('$baseUrl/friend-requests/$requestId/reject'),
         headers: headers,
       );
       _handleResponse(response);
@@ -290,23 +290,23 @@ class ApiService {
       List<String> ingredients) async {
     try {
       final headers = await _getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+
+      print('Requesting meals with: ${ingredients.join(', ')}');
+
       final response = await http.post(
         Uri.parse('$baseUrl/meals/suggestions'),
         headers: headers,
         body: jsonEncode({'ingredients': ingredients}),
       );
 
+      print('Response status: ${response.statusCode}');
+
       final responseData = _handleResponse(response);
-
-      if (responseData == null ||
-          responseData['success'] == false ||
-          !responseData.containsKey('matches')) {
-        return [];
-      }
-
-      return List<dynamic>.from(responseData['matches']);
+      return (responseData['matches'] as List?) ?? [];
     } catch (e) {
-      throw Exception('Failed to get meal suggestions: ${e.toString()}');
+      print('Meal suggestion error: ${e.toString()}');
+      throw Exception('Failed to get suggestions: ${e.toString()}');
     }
   }
 
@@ -314,30 +314,39 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getInt(_userIdKey);
+
+      if (userId == null) throw Exception("User not authenticated");
+
+      // Proper JSON formatting for PostgreSQL JSONB
+      final ingredientsJson = jsonEncode(meal['ingredients']
+          .map((ing) => ing.toString().replaceAll("'", "\""))
+          .toList());
+
+      final mealData = {
+        'user_id': userId,
+        'meal_date': date.toIso8601String().split('T')[0],
+        'meal_name': meal['meal'],
+        'ingredients': ingredientsJson, // Proper JSONB format
+        'meal_type': meal['type'] ?? 'main',
+        'calories': (meal['calories'] ?? 0.0).toString(),
+        'prep_time': meal['details']['prepTime'] ?? '',
+        'cook_time': meal['details']['cookTime'] ?? '',
+        'meal_image_url': meal['details']['url'] ?? ''
+      };
+
       final headers = await _getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
 
       final response = await http.post(
-        Uri.parse('$baseUrl/meal-plans'),
+        Uri.parse('$baseUrl/meal-plans'), // Must match backend route
         headers: headers,
-        body: jsonEncode({
-          'user_id': userId,
-          'meal_date': date.toIso8601String().split('T')[0],
-          'meal_name': meal['meal'],
-          'ingredients': meal['ingredients'],
-          'meal_type': meal['type'],
-          'calories': meal['calories'],
-          'prep_time': meal['details']['prepTime'],
-          'cook_time': meal['details']['cookTime'],
-          'meal_image_url': meal['details']['url']
-        }),
+        body: jsonEncode(mealData),
       );
 
-      final responseData = _handleResponse(response);
-      if (!responseData['success']) {
-        throw Exception('Failed to save meal');
-      }
+      _handleResponse(response);
     } catch (e) {
-      throw Exception('Save failed: ${e.toString()}');
+      print('Save Meal Error: $e');
+      throw Exception('Failed to save meal: ${e.toString()}');
     }
   }
 
@@ -348,13 +357,15 @@ class ApiService {
       final headers = await _getAuthHeaders();
 
       final response = await http.get(
-        Uri.parse(
-            '$baseUrl/meal-plans?date=${date.toIso8601String().split('T')[0]}&user_id=$userId'),
+        Uri.parse('$baseUrl/meal_plans?'
+            'date=${date.toIso8601String().split('T')[0]}&'
+            'user_id=$userId'),
         headers: headers,
       );
 
-      return _handleResponse(response);
+      return _handleResponse(response) as List<dynamic>;
     } catch (e) {
+      print('Get meals error: ${e.toString()}');
       throw Exception('Failed to load meals: ${e.toString()}');
     }
   }
