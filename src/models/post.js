@@ -9,7 +9,11 @@ const Post = sequelize.define('Post', {
   },
   user_id: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: 'users', // Ensure you have a User model
+      key: 'user_id'
+    }
   },
   title: {
     type: DataTypes.STRING(255),
@@ -31,14 +35,38 @@ const Post = sequelize.define('Post', {
     type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW
-  },
-
+  }
 }, {
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   tableName: 'posts',
-  underscored: true
+  underscored: true,
+  indexes: [
+    {
+      fields: ['user_id']
+    }
+  ]
 });
+
+// Associations
+Post.associate = (models) => {
+  Post.belongsTo(models.User, {
+    foreignKey: 'user_id',
+    as: 'author'
+  });
+
+  Post.hasMany(models.Comment, {
+    foreignKey: 'post_id',
+    as: 'comments',
+    onDelete: 'CASCADE'
+  });
+
+  Post.hasMany(models.Reaction, {
+    foreignKey: 'post_id',
+    as: 'reactions',
+    onDelete: 'CASCADE'
+  });
+};
 
 module.exports = Post;

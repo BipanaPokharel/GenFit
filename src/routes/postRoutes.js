@@ -1,17 +1,15 @@
+// routes/postRoutes.js
 const express = require('express');
 const router = express.Router();
 const postController = require('../controllers/postController');
 
-// POST /api/posts
+// ADD THIS ROUTE
+router.get('/', postController.getAllPosts); 
+
+// Existing routes
 router.post('/', postController.createPost);
-
-// GET /api/posts/:id
 router.get('/:id', postController.getPostById);
-
-// PUT /api/posts/:id
 router.put('/:id', postController.updatePost);
-
-// DELETE /api/posts/:id
 router.delete('/:id', postController.deletePost);
 
 module.exports = router;

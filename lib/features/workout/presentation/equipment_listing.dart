@@ -29,7 +29,7 @@ class _DailyWorkoutsPageState extends State<DailyWorkoutsPage> {
 
   void onTabTapped(int index) {
     setState(() {
-      currentIndex = index; // Updates the selected tab index
+      currentIndex = index;
     });
   }
 

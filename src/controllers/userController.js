@@ -147,7 +147,7 @@ exports.updateProfilePicture = async (req, res) => {
 
         res.status(200).json({
             message: "Profile picture updated successfully",
-            profile_pic: user.profile_pic // Returns full URL through model getter
+            profile_pic: user.profile_pic 
         });
 
     } catch (error) {

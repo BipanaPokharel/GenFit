@@ -1,10 +1,10 @@
-// api_service.dart
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class ApiService {
   final String baseUrl;
@@ -19,7 +19,7 @@ class ApiService {
     final token = prefs.getString(_tokenKey);
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
@@ -56,15 +56,21 @@ class ApiService {
         Uri.parse('$baseUrl/auth/login'),
         body: jsonEncode({'email': email, 'password': password}),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(Duration(seconds: 10));
 
       final data = _handleResponse(response);
       // Save token and user ID
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, data['token']);
-      await prefs.setInt(
-          _userIdKey, data['user']['user_id']); // Access user_id from response
+      await prefs.setInt(_userIdKey, data['user']['user_id'] as int);
       return data;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -76,8 +82,15 @@ class ApiService {
         Uri.parse('$baseUrl/auth/register'),
         body: jsonEncode(userData),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(Duration(seconds: 10));
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -89,16 +102,25 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final headers = await _getAuthHeaders();
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/$userId/logout'),
-        headers: headers,
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/users/$userId/logout'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
 
       _handleResponse(response);
 
       // Clear local storage
       await prefs.remove(_tokenKey);
       await prefs.remove(_userIdKey);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -110,12 +132,21 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/$userId'),
-        headers: headers,
-      );
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/users/$userId'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
 
       return _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -127,13 +158,22 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/users/$userId/settings'),
-        headers: headers,
-        body: jsonEncode(updates),
-      );
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/users/$userId/settings'),
+            headers: headers,
+            body: jsonEncode(updates),
+          )
+          .timeout(Duration(seconds: 10));
 
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -156,11 +196,66 @@ class ApiService {
           contentType: mimeType != null ? MediaType.parse(mimeType) : null,
         ));
 
-      final response = await request.send();
-      final responseData = await http.Response.fromStream(response);
-      final jsonResponse = _handleResponse(responseData);
-      return jsonResponse['profilePictureUrl'];
+      final streamedResponse =
+          await request.send().timeout(Duration(seconds: 10));
+      final response = await http.Response.fromStream(streamedResponse);
+      final jsonResponse = _handleResponse(response);
+      return jsonResponse['profilePictureUrl'] as String;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Community Post Methods
+  Future<List<dynamic>> getPosts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey);
+      Map<String, String> headers = {'Content-Type': 'application/json'};
+
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Add debugging
+      print('Fetching posts from: $baseUrl/posts');
+
+      final response = await http
+          .get(Uri.parse('$baseUrl/posts'), headers: headers)
+          .timeout(Duration(seconds: 10));
+
+      // Add debugging
+      print('Posts response status: ${response.statusCode}');
+      print('Posts response body: ${response.body}');
+
+      final data = _handleResponse(response);
+
+      // Handle different response formats
+      if (data is List) {
+        return data;
+      } else if (data is Map && data.containsKey('posts')) {
+        return data['posts'] as List<dynamic>;
+      } else if (data is Map && data.containsKey('results')) {
+        return data['results'] as List<dynamic>;
+      } else {
+        return data is List ? data : [data];
+      }
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
+    } catch (e) {
+      print('Error getting posts: $e');
       rethrow;
     }
   }
@@ -169,13 +264,22 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/users/$userId/password'),
-        headers: headers,
-        body: jsonEncode({'newPassword': newPassword}),
-      );
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/users/$userId/password'),
+            headers: headers,
+            body: jsonEncode({'newPassword': newPassword}),
+          )
+          .timeout(Duration(seconds: 10));
 
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -185,12 +289,21 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
 
-      final response = await http.delete(
-        Uri.parse('$baseUrl/users/$userId'),
-        headers: headers,
-      );
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/users/$userId'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
 
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -204,8 +317,17 @@ class ApiService {
           ? '$baseUrl/workouts?category=$category'
           : '$baseUrl/workouts';
 
-      final response = await http.get(Uri.parse(endpoint), headers: headers);
-      return _handleResponse(response)['results'];
+      final response = await http
+          .get(Uri.parse(endpoint), headers: headers)
+          .timeout(Duration(seconds: 10));
+      return _handleResponse(response)['results'] as List<dynamic>;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -215,12 +337,21 @@ class ApiService {
       Map<String, dynamic> workout) async {
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/workouts'),
-        headers: headers,
-        body: jsonEncode(workout),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/workouts'),
+            headers: headers,
+            body: jsonEncode(workout),
+          )
+          .timeout(Duration(seconds: 10));
       return _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -231,12 +362,20 @@ class ApiService {
     // Pass userId
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse(
-            '$baseUrl/users/$userId/friend-requests/pending'), // Correct Endpoint
-        headers: headers,
-      );
-      return _handleResponse(response);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/users/$userId/friend-requests/pending'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
+      return _handleResponse(response) as List<dynamic>;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -245,12 +384,21 @@ class ApiService {
   Future<void> sendFriendRequest(String targetUserId) async {
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/friend-requests'),
-        headers: headers,
-        body: jsonEncode({'receiverId': targetUserId}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/friend-requests'),
+            headers: headers,
+            body: jsonEncode({'receiverId': targetUserId}),
+          )
+          .timeout(Duration(seconds: 10));
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -260,12 +408,21 @@ class ApiService {
     // Pass requestId
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.put(
-        // Using PUT request
-        Uri.parse('$baseUrl/friend-requests/$requestId/accept'),
-        headers: headers,
-      );
+      final response = await http
+          .put(
+            // Using PUT request
+            Uri.parse('$baseUrl/friend-requests/$requestId/accept'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -275,17 +432,27 @@ class ApiService {
     // Pass requestId
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.put(
-        // Using PUT request
-        Uri.parse('$baseUrl/friend-requests/$requestId/reject'),
-        headers: headers,
-      );
+      final response = await http
+          .put(
+            // Using PUT request
+            Uri.parse('$baseUrl/friend-requests/$requestId/reject'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
   }
 
+  /// Meal Suggestion Methods
   Future<List<dynamic>> generateMealSuggestions(
       List<String> ingredients) async {
     try {
@@ -294,16 +461,25 @@ class ApiService {
 
       print('Requesting meals with: ${ingredients.join(', ')}');
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/meals/suggestions'),
-        headers: headers,
-        body: jsonEncode({'ingredients': ingredients}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/meals/suggestions'),
+            headers: headers,
+            body: jsonEncode({'ingredients': ingredients}),
+          )
+          .timeout(Duration(seconds: 10));
 
       print('Response status: ${response.statusCode}');
 
       final responseData = _handleResponse(response);
       return (responseData['matches'] as List?) ?? [];
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       print('Meal suggestion error: ${e.toString()}');
       throw Exception('Failed to get suggestions: ${e.toString()}');
@@ -337,13 +513,22 @@ class ApiService {
       final headers = await _getAuthHeaders();
       headers['Content-Type'] = 'application/json';
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/meal-plans'), // Must match backend route
-        headers: headers,
-        body: jsonEncode(mealData),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/meal-plans'),
+            headers: headers,
+            body: jsonEncode(mealData),
+          )
+          .timeout(Duration(seconds: 10));
 
       _handleResponse(response);
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       print('Save Meal Error: $e');
       throw Exception('Failed to save meal: ${e.toString()}');
@@ -356,14 +541,23 @@ class ApiService {
       final userId = prefs.getInt(_userIdKey);
       final headers = await _getAuthHeaders();
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/meal_plans?'
-            'date=${date.toIso8601String().split('T')[0]}&'
-            'user_id=$userId'),
-        headers: headers,
-      );
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/meal_plans?'
+                'date=${date.toIso8601String().split('T')[0]}&'
+                'user_id=$userId'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
 
       return _handleResponse(response) as List<dynamic>;
+    } on SocketException catch (e) {
+      print('SocketException: $e');
+      throw Exception(
+          'Network error occurred. Please check your internet connection.');
+    } on TimeoutException catch (e) {
+      print('TimeoutException: $e');
+      throw Exception('Request timed out. Please try again.');
     } catch (e) {
       print('Get meals error: ${e.toString()}');
       throw Exception('Failed to load meals: ${e.toString()}');
