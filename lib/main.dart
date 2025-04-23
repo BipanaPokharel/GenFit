@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fyp/features/communityfeed/firstpage.dart';
 import 'package:fyp/features/presentation/onboarding/onboarding.dart';
 import 'package:fyp/operator.dart';
 
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const Operator(),
+      home: const Initial(),
     );
   }
 }

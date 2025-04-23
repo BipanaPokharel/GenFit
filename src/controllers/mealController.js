@@ -1,7 +1,7 @@
 // controllers/mealController.js
 const fs = require('fs').promises;
 const { parse } = require('csv-parse');
-const MealPlan = require("../models/MealPlan");
+const MealPlan = require('../models/mealPlan'); 
 
 // ==================== CSV Meal Suggestions ====================
 const fetchMealRecommendations = async (ingredients, exclude = [], dietary) => {
@@ -98,18 +98,46 @@ const getMealSuggestions = async (req, res) => {
 // ==================== Meal Plan CRUD Operations ====================
 const createMealPlan = async (req, res) => {
     try {
-        const mealPlan = await MealPlan.create(req.body);
+        // Debug: Log the incoming request body
+        console.log("Request Body:", req.body);
+
+        // Validate the required fields (basic validation)
+        const { user_id, meal_type, calories, meal_name, ingredients, prep_time, cook_time, meal_image_url, meal_date } = req.body;
+        
+        if (!user_id || !meal_name || !ingredients || !meal_type) {
+            return res.status(400).json({
+                success: false,
+                error: "Missing required fields."
+            });
+        }
+
+        // Create a new meal plan in the database
+        const mealPlan = await MealPlan.create({
+            user_id,
+            meal_type,
+            calories,
+            meal_name,
+            ingredients,
+            prep_time,
+            cook_time,
+            meal_image_url,
+            meal_date
+        });
+
         res.status(201).json({
             success: true,
             data: mealPlan
         });
+
     } catch (error) {
+        console.error("Create Meal Plan Error:", error);
         res.status(400).json({
             success: false,
             error: `Validation failed: ${error.message}`
         });
     }
 };
+
 
 const getMealPlans = async (req, res) => {
     try {

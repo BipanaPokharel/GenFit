@@ -141,104 +141,131 @@ class _JournalPageState extends State<JournalPage> {
           builder: (context, setState) {
             return Dialog(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
+                  borderRadius: BorderRadius.circular(30)),
+              elevation: 10,
+              backgroundColor: Colors.white,
               child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      entry == null ? 'New Entry' : 'Edit Entry',
-                      style: GoogleFonts.poppins(
-                          fontSize: 24, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(15),
+                padding: const EdgeInsets.all(24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        entry == null ? 'New Entry' : 'Edit Entry',
+                        style: GoogleFonts.poppins(
+                            fontSize: 24, fontWeight: FontWeight.w600),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: moodOptions.map((mood) {
-                          return GestureDetector(
-                            onTap: () => setState(() => selectedMood = mood),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: selectedMood == mood
-                                    ? moodColors[mood]?.withOpacity(0.2)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: moodOptions.map((mood) {
+                            final isSelected = selectedMood == mood;
+                            return GestureDetector(
+                              onTap: () => setState(() => selectedMood = mood),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? moodColors[mood]?.withOpacity(0.25)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: moodColors[mood]!
+                                                .withOpacity(0.4),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 6),
+                                          )
+                                        ]
+                                      : [],
+                                ),
+                                child: AnimatedScale(
+                                  scale: isSelected ? 1.3 : 1.0,
+                                  duration: const Duration(milliseconds: 300),
+                                  child: Icon(
+                                    moodIcons[mood],
+                                    color: isSelected
+                                        ? moodColors[mood]
+                                        : Colors.grey[400],
+                                    size: 36,
+                                  ),
+                                ),
                               ),
-                              child: Icon(
-                                moodIcons[mood],
-                                color: selectedMood == mood
-                                    ? moodColors[mood]
-                                    : Colors.grey,
-                                size: 32,
-                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      TextField(
+                        controller: journalController,
+                        maxLines: 5,
+                        style: GoogleFonts.poppins(
+                            fontSize: 16, color: Colors.grey[900]),
+                        decoration: InputDecoration(
+                          hintText: "What's on your mind?",
+                          hintStyle:
+                              GoogleFonts.poppins(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(
+                                color: moodColors[selectedMood]!, width: 2),
+                          ),
+                          // Shadow below textfield
+                          // Note: InputDecoration doesn't support boxShadow, so wrap TextField with Container if needed
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Cancel',
+                                style: TextStyle(color: Colors.grey[600])),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (entry != null) {
+                                updateEntry(entry.id);
+                              } else {
+                                addEntry();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: moodColors[selectedMood],
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 28, vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: journalController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: "What's on your mind?",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide:
-                              BorderSide(color: moodColors[selectedMood]!),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel',
-                              style: TextStyle(color: Colors.grey[600])),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (entry != null) {
-                              updateEntry(entry.id);
-                            } else {
-                              addEntry();
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: moodColors[selectedMood],
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                            child: Text(
+                              entry == null ? 'Add Entry' : 'Update',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600),
+                            ),
                           ),
-                          child: Text(
-                            entry == null ? 'Add Entry' : 'Update',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -248,22 +275,58 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
+  void showDeleteConfirmation(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Entry'),
+        content: const Text('Are you sure you want to delete this entry?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+          ),
+          TextButton(
+            onPressed: () => deleteEntry(id),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        elevation: 0,
+        elevation: 4,
         backgroundColor: Colors.white,
-        title: Text('Journal',
-            style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87)),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.amber.shade300, Colors.amber.shade600],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: Text(
+          'Journal',
+          style: GoogleFonts.poppins(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 1.2,
+          ),
+        ),
         centerTitle: true,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(color: moodColors['happy']))
+          ? Center(
+              child: CircularProgressIndicator(color: moodColors['happy']),
+            )
           : AnimationLimiter(
               child: ListView.builder(
                 itemCount: journalEntries.length,
@@ -279,81 +342,83 @@ class _JournalPageState extends State<JournalPage> {
                         child: Card(
                           margin: const EdgeInsets.only(bottom: 16),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20)),
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
+                              borderRadius: BorderRadius.circular(25)),
+                          elevation: 6,
+                          shadowColor: moodColors[entry.mood]?.withOpacity(0.3),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  moodColors[entry.mood]!.withOpacity(0.1),
+                                  Colors.white,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            padding: const EdgeInsets.all(20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(8),
+                                      padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
                                         color: moodColors[entry.mood]
-                                            ?.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
+                                            ?.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: moodColors[entry.mood]!
+                                                .withOpacity(0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
                                       ),
                                       child: Icon(moodIcons[entry.mood],
                                           color: moodColors[entry.mood],
-                                          size: 24),
+                                          size: 28),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 16),
                                     Text(
                                       DateFormat('MMMM d, yyyy')
                                           .format(DateTime.parse(entry.date)),
-                                      style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 14),
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey[700],
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
                                     const Spacer(),
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined),
-                                      color: Colors.grey[600],
+                                      color: Colors.grey[700],
                                       onPressed: () =>
                                           showEntryDialog(entry: entry),
+                                      tooltip: 'Edit Entry',
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete_outline),
-                                      color: Colors.red[300],
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(20)),
-                                            title: const Text('Delete Entry'),
-                                            content: const Text(
-                                                'Are you sure you want to delete this entry?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                child: Text('Cancel',
-                                                    style: TextStyle(
-                                                        color:
-                                                            Colors.grey[600])),
-                                              ),
-                                              TextButton(
-                                                onPressed: () =>
-                                                    deleteEntry(entry.id),
-                                                child: const Text('Delete',
-                                                    style: TextStyle(
-                                                        color: Colors.red)),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
+                                      color: Colors.redAccent,
+                                      onPressed: () =>
+                                          showDeleteConfirmation(entry.id),
+                                      tooltip: 'Delete Entry',
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(entry.notes,
-                                    style: const TextStyle(
-                                        fontSize: 16, height: 1.5)),
+                                const SizedBox(height: 14),
+                                Text(
+                                  entry.notes,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 17,
+                                    height: 1.6,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -367,8 +432,18 @@ class _JournalPageState extends State<JournalPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showEntryDialog(),
         backgroundColor: moodColors['happy'],
-        icon: const Icon(Icons.add),
-        label: const Text('New Entry'),
+        elevation: 8,
+        highlightElevation: 12,
+        icon: const Icon(Icons.add, size: 28),
+        label: Text(
+          'New Entry',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: 0.8,
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );
   }

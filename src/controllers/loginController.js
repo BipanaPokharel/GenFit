@@ -6,36 +6,39 @@ exports.login = async (req, res) => {
   console.log("Login request body:", req.body);
 
   try {
-    const { email, password } = req.body; 
+    const { email, password } = req.body;
 
-    // Check if user exists in the database
-    const user = await User.findOne({ where: { email } });
-    console.log("User found:", user); // Debug log
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+
+    let user;
+    try {
+      user = await User.findOne({ where: { email: normalizedEmail } });
+      console.log("User found:", user);
+    } catch (dbError) {
+      console.error("Database query error:", dbError);
+      return res.status(500).json({ message: "Database error", error: dbError.message });
+    }
 
     if (!user) {
-      // Check if user exists
       console.log("User not found");
-      return res.status(401).json({ message: "Invalid email or password" }); 
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Compare password using bcryptjs
     const validPassword = await bcrypt.compare(password, user.password);
-    console.log("Password valid:", validPassword); // Debug log
+    console.log("Password valid:", validPassword);
 
     if (!validPassword) {
-      // Compare password
       console.log("Invalid password");
-      return res.status(401).json({ message: "Invalid email or password" }); 
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user.user_id, email: user.email },
       process.env.JWT_SECRET || "bipana@!0",
       { expiresIn: "1h" }
     );
 
-    // Send response with token
     res.status(200).json({
       message: "Login successful",
       user: {
@@ -48,10 +51,8 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error("Login error:", error); 
-    console.log("Error details:", error.message); 
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("Login error:", error);
+    console.log("Error details:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };

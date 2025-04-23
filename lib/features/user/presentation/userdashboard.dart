@@ -55,7 +55,7 @@ class FriendRequest {
 }
 
 class DashboardScreen extends StatefulWidget {
-  final VoidCallback onLogout; // Changed Function() to VoidCallback
+  final VoidCallback onLogout;
 
   const DashboardScreen({Key? key, required this.onLogout}) : super(key: key);
 
@@ -66,10 +66,12 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   NavigationItem _selectedItem = NavigationItem.library;
   bool _isSidebarExpanded = true;
+  bool _isLoading = true;
 
   List<FriendRequest> pendingRequests = [];
   int? userId;
   String? token;
+
   static const double _mobileBreakpoint = 600;
   static const double _tabletBreakpoint = 900;
 
@@ -79,18 +81,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _apiService = ApiService("http://localhost:3000/api");
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUserData();
-    });
+    _loadUserData();
   }
 
   Future<void> _loadUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final loadedUserId = prefs.getInt('user_id');
+      final loadedToken = prefs.getString('auth_token');
+
       setState(() {
-        userId = prefs.getInt('user_id');
-        token = prefs.getString('auth_token'); // Corrected key here!
+        userId = loadedUserId;
+        token = loadedToken;
+        _isLoading = false;
       });
+
       print('User ID: $userId, Token: $token');
       if (userId == null || token == null) {
         print("User id or token is null");
@@ -98,6 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       print('Error loading user data: $e');
       _showErrorSnackBar('Failed to load user data.');
+      setState(() => _isLoading = false);
     }
   }
 
@@ -145,7 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _apiService.logout(userId!);
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      widget.onLogout(); // Call the onLogout callback to navigate to login
+      widget.onLogout();
     } catch (e) {
       _showErrorSnackBar('Failed to logout');
     }
@@ -238,7 +244,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 NavigationItem.onboarding, Icons.info, 'Onboarding'),
             _buildNavigationItem(NavigationItem.journal, Icons.book, 'Journal'),
             const SizedBox(height: 20),
-            const SizedBox(height: 20),
             const Divider(),
             ListTile(
               leading: Icon(Icons.exit_to_app, color: Colors.red[400]),
@@ -311,19 +316,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return const Notifications();
       case NavigationItem.bmi:
         return const BMICalculator();
-
       case NavigationItem.initial:
         return const Initial();
-
       case NavigationItem.secondPage:
         return const Second();
-
       case NavigationItem.login:
         return const Login();
-
       case NavigationItem.signup:
         return const SignUp();
-
       case NavigationItem.reset:
         return const ForgotPasswordPage();
       case NavigationItem.onboarding:
@@ -346,39 +346,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > _tabletBreakpoint;
 
-    return FutureBuilder(
-      future: _loadUserData(), // Call _loadUserData in the future builder
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (userId == null || token == null) {
-            // Handle the case where userId or token is null after loading
-            return Scaffold(
-              body: Center(
-                child: Text('User not authenticated.'),
-              ),
-            );
-          } else {
-            // Build the UI after the data has been loaded
-            return Scaffold(
-              appBar: AppBar(title: Text(_getPageTitle())),
-              body: Row(
-                children: [
-                  if (isDesktop || _isSidebarExpanded)
-                    _buildNavigation(isDesktop),
-                  Expanded(child: _buildContent(isDesktop)),
-                ],
-              ),
-            );
-          }
-        } else {
-          // Show a loading indicator while data is being loaded
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-      },
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (userId == null || token == null) {
+      return const Scaffold(
+        body: Center(child: Text('User not authenticated.')),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: Text(_getPageTitle())),
+      body: Row(
+        children: [
+          if (isDesktop || _isSidebarExpanded) _buildNavigation(isDesktop),
+          Expanded(child: _buildContent(isDesktop)),
+        ],
+      ),
     );
   }
 }

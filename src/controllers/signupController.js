@@ -32,10 +32,11 @@ exports.signup = async (req, res) => {
     const user = await User.create({
       username,
       email,
-      password: hashedPassword,
+      password,
       profile_pic: profile_pic || null,
       fitness_goal: fitness_goal || null,
     });
+    
 
     const token = jwt.sign(
       { userId: user.user_id, email: user.email },

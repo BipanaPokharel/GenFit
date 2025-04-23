@@ -47,7 +47,7 @@ const User = sequelize.define(
   },
   {
     tableName: "User",
-    timestamps: false, // Changed from true to false
+    timestamps: false, 
     hooks: {
       beforeSave: async (user) => {
         if (user.changed('password')) {
@@ -61,7 +61,8 @@ const User = sequelize.define(
 // Associations
 User.associate = function(models) {
   User.hasMany(models.Post, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-  // Add other associations as needed
+  User.hasMany(models.Comment, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  User.hasMany(models.Reaction, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 };
 
 module.exports = User;
