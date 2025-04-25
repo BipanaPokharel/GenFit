@@ -17,10 +17,7 @@ class _CommunityFeedState extends State<CommunityFeed> {
   String errorMessage = '';
   bool _mounted = true;
 
-  // Update this with your actual server IP if running on a physical device
-  // Instead of localhost, use your computer's IP address
-  final ApiService apiService = ApiService(
-      "http://10.0.2.2:3000/api"); // Use 10.0.2.2 for Android emulator to access host
+  final ApiService apiService = ApiService("http://10.0.2.2:3000/api");
 
   @override
   void initState() {
@@ -43,16 +40,9 @@ class _CommunityFeedState extends State<CommunityFeed> {
     });
 
     try {
-      // Add debugging
-      print('Attempting to fetch posts');
-
       final fetchedPosts = await apiService.getPosts();
 
-      // Check if widget is still mounted before continuing
       if (!mounted) return;
-
-      // Add debugging
-      print('Fetched ${fetchedPosts.length} posts');
 
       if (fetchedPosts.isEmpty) {
         if (_mounted) {
@@ -64,34 +54,22 @@ class _CommunityFeedState extends State<CommunityFeed> {
         return;
       }
 
-      // Print structure of first post to debug
-      print('First post structure: ${fetchedPosts.first}');
-
-      // Fetch usernames separately if needed
       List<Map<String, dynamic>> postsWithUsernames = [];
       for (var post in fetchedPosts) {
-        // Check if widget is still mounted before each API call
         if (!mounted) return;
 
         try {
-          // Convert post to Map if it's not already
           final postMap = post is Map<String, dynamic>
               ? post
               : Map<String, dynamic>.from(post as Map);
 
-          // Make sure user_id exists and is an integer
           final userId = postMap['user_id'] is int
               ? postMap['user_id']
               : int.tryParse(postMap['user_id'].toString()) ?? 0;
 
-          if (userId <= 0) {
-            // Skip posts without valid user IDs
-            continue;
-          }
+          if (userId <= 0) continue;
 
           final user = await apiService.getCurrentUser(userId);
-
-          // Check if widget is still mounted after API call
           if (!mounted) return;
 
           final username = user['username'] ?? 'Unknown User';
@@ -102,15 +80,12 @@ class _CommunityFeedState extends State<CommunityFeed> {
             'content': postMap['content'] ?? '',
             'title': postMap['title'] ?? 'No Title',
             'created_at': postMap['created_at'] ?? '',
-            'image': postMap['image'] ?? 'https://via.placeholder.com/150',
           });
         } catch (e) {
           print('Error processing post: $e');
-          // Continue to next post
         }
       }
 
-      // Final check before setState
       if (!mounted) return;
 
       if (_mounted) {
@@ -122,7 +97,6 @@ class _CommunityFeedState extends State<CommunityFeed> {
     } catch (e) {
       print('Exception in fetchPosts: $e');
 
-      // Check if widget is still mounted before setState
       if (!mounted) return;
 
       if (_mounted) {
@@ -154,7 +128,7 @@ class _CommunityFeedState extends State<CommunityFeed> {
         title: const Text('Community Feed'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: fetchPosts,
           ),
         ],
@@ -167,16 +141,16 @@ class _CommunityFeedState extends State<CommunityFeed> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('Error: $errorMessage'),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: fetchPosts,
-                        child: Text('Retry'),
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),
                 )
               : posts.isEmpty
-                  ? Center(
+                  ? const Center(
                       child: Text('No posts available'),
                     )
                   : RefreshIndicator(
@@ -192,33 +166,20 @@ class _CommunityFeedState extends State<CommunityFeed> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundImage: NetworkImage(post[
-                                                'image'] ??
-                                            'https://via.placeholder.com/150'),
-                                        onBackgroundImageError:
-                                            (exception, stackTrace) {
-                                          // Handle image load error
-                                          print(
-                                              'Error loading image: $exception');
-                                        },
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        post['username'], // Display username
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
+                                  Text(
+                                    post['username'],
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     post['title'],
                                     style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(post['content']),
@@ -226,7 +187,9 @@ class _CommunityFeedState extends State<CommunityFeed> {
                                   Text(
                                     'Posted on ${formatDate(post['created_at'])}',
                                     style: const TextStyle(
-                                        fontSize: 12, color: Colors.grey),
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ],
                               ),

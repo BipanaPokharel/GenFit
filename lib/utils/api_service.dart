@@ -154,16 +154,18 @@ class ApiService {
 
   Future<void> updateUserSettings(
       int userId, Map<String, dynamic> updates) async {
-    // Pass userId
     try {
       final headers = await _getAuthHeaders();
+      final url = Uri.parse('$baseUrl/users/$userId/settings');
+
+      // Log request details for debugging
+      print('Updating user settings for userId: $userId');
+      print('Request URL: $url');
+      print('Request body: ${jsonEncode(updates)}');
+      print('Headers: $headers');
 
       final response = await http
-          .put(
-            Uri.parse('$baseUrl/users/$userId/settings'),
-            headers: headers,
-            body: jsonEncode(updates),
-          )
+          .put(url, headers: headers, body: jsonEncode(updates))
           .timeout(Duration(seconds: 10));
 
       _handleResponse(response);
@@ -175,32 +177,37 @@ class ApiService {
       print('TimeoutException: $e');
       throw Exception('Request timed out. Please try again.');
     } catch (e) {
+      print('Error: $e');
       rethrow;
     }
   }
 
-  Future<String> uploadProfilePicture(int userId, File imageFile) async {
-    // Pass userId
+  /// Upload Profile Picture
+  Future<void> uploadProfilePicture(int userId, File imageFile) async {
     try {
-      final headers = await _getAuthHeaders();
-      final mimeType = lookupMimeType(imageFile.path);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey);
 
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/users/$userId/profile-picture'), // Correct endpoint
-      )
-        ..headers.addAll(headers)
-        ..files.add(await http.MultipartFile.fromPath(
-          'profileImage', // Change to match backend expectation
-          imageFile.path,
-          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
-        ));
+      if (token == null || token.isEmpty) {
+        throw Exception('Authentication token is missing');
+      }
 
-      final streamedResponse =
-          await request.send().timeout(Duration(seconds: 10));
+      final uri = Uri.parse('$baseUrl/users/$userId/profile-picture');
+
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..fields['user_id'] = userId.toString()
+        ..files.add(await http.MultipartFile.fromPath('image', imageFile.path,
+            contentType: MediaType('image', 'jpeg')));
+
+      final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      final jsonResponse = _handleResponse(response);
-      return jsonResponse['profilePictureUrl'] as String;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Profile picture uploaded successfully');
+      } else {
+        throw Exception('Failed to upload profile picture: ${response.body}');
+      }
     } on SocketException catch (e) {
       print('SocketException: $e');
       throw Exception(
@@ -209,11 +216,12 @@ class ApiService {
       print('TimeoutException: $e');
       throw Exception('Request timed out. Please try again.');
     } catch (e) {
+      print('Error: $e');
       rethrow;
     }
   }
 
-  /// Community Post Methods
+  /// Get Posts from the Community
   Future<List<dynamic>> getPosts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -224,20 +232,17 @@ class ApiService {
         headers['Authorization'] = 'Bearer $token';
       }
 
-      // Add debugging
       print('Fetching posts from: $baseUrl/posts');
 
       final response = await http
           .get(Uri.parse('$baseUrl/posts'), headers: headers)
           .timeout(Duration(seconds: 10));
 
-      // Add debugging
       print('Posts response status: ${response.statusCode}');
       print('Posts response body: ${response.body}');
 
       final data = _handleResponse(response);
 
-      // Handle different response formats
       if (data is List) {
         return data;
       } else if (data is Map && data.containsKey('posts')) {
@@ -260,6 +265,7 @@ class ApiService {
     }
   }
 
+  /// Change User Password
   Future<void> changePassword(int userId, String newPassword) async {
     try {
       final headers = await _getAuthHeaders();
@@ -285,6 +291,7 @@ class ApiService {
     }
   }
 
+  /// Delete User Account
   Future<void> deleteAccount(int userId) async {
     try {
       final headers = await _getAuthHeaders();
@@ -502,7 +509,7 @@ class ApiService {
         'user_id': userId,
         'meal_date': date.toIso8601String().split('T')[0],
         'meal_name': meal['meal'],
-        'ingredients': ingredientsJson, // Proper JSONB format
+        'ingredients': ingredientsJson,
         'meal_type': meal['type'] ?? 'main',
         'calories': (meal['calories'] ?? 0.0).toString(),
         'prep_time': meal['details']['prepTime'] ?? '',

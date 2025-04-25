@@ -13,14 +13,23 @@ exports.validateSignup = [
 
 exports.signup = async (req, res) => {
   try {
-    console.log("Signup request body:", req.body); // Debug log
+    console.log("Signup request body:", req.body);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { username, email, password, profile_pic, fitness_goal } = req.body;
+    const {
+      username,
+      email,
+      password,
+      profile_pic,
+      fitness_goal,
+      dob,
+      phone_number,
+      gender,
+    } = req.body;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -32,11 +41,13 @@ exports.signup = async (req, res) => {
     const user = await User.create({
       username,
       email,
-      password,
+      password: hashedPassword,
       profile_pic: profile_pic || null,
       fitness_goal: fitness_goal || null,
+      dob: dob || null,
+      phone_number: phone_number || null,
+      gender: gender || null,
     });
-    
 
     const token = jwt.sign(
       { userId: user.user_id, email: user.email },
@@ -50,6 +61,11 @@ exports.signup = async (req, res) => {
         user_id: user.user_id,
         email: user.email,
         username: user.username,
+        dob: user.dob,
+        phone_number: user.phone_number,
+        gender: user.gender,
+        profile_pic: user.profile_pic,
+        fitness_goal: user.fitness_goal,
       },
       token,
     });
