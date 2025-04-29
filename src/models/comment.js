@@ -1,3 +1,4 @@
+// Comment.js
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/dbINIT');
 
@@ -19,7 +20,7 @@ const Comment = sequelize.define('Comment', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'users', // Make sure you have a User model
+      model: 'users',
       key: 'user_id'
     }
   },
@@ -36,17 +37,8 @@ const Comment = sequelize.define('Comment', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: false // No updated_at column in your schema
+  updatedAt: false
 });
 
-Comment.associate = (models) => {
-  Comment.belongsTo(models.Post, {
-    foreignKey: 'post_id',
-    onDelete: 'CASCADE'
-  });
-  Comment.belongsTo(models.User, {
-    foreignKey: 'user_id'
-  });
-};
-
+// Export before defining associations
 module.exports = Comment;

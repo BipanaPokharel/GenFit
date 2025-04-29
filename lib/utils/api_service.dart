@@ -11,6 +11,9 @@ class ApiService {
   static const String _tokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
 
+  // Default timeout duration increased to 30 seconds
+  static const Duration defaultTimeout = Duration(seconds: 30);
+
   ApiService(this.baseUrl);
 
   // Helper method to get auth headers
@@ -56,7 +59,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/login'),
         body: jsonEncode({'email': email, 'password': password}),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(Duration(seconds: 10));
+      ).timeout(defaultTimeout);
 
       final data = _handleResponse(response);
       // Save token and user ID
@@ -82,7 +85,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/register'),
         body: jsonEncode(userData),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(Duration(seconds: 10));
+      ).timeout(defaultTimeout);
       _handleResponse(response);
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -97,7 +100,6 @@ class ApiService {
   }
 
   Future<void> logout(int userId) async {
-    // Pass userId to logout
     try {
       final prefs = await SharedPreferences.getInstance();
       final headers = await _getAuthHeaders();
@@ -107,7 +109,7 @@ class ApiService {
             Uri.parse('$baseUrl/users/$userId/logout'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       _handleResponse(response);
 
@@ -128,7 +130,6 @@ class ApiService {
 
   /// User Profile Methods
   Future<Map<String, dynamic>> getCurrentUser(int userId) async {
-    // Pass userId
     try {
       final headers = await _getAuthHeaders();
 
@@ -137,7 +138,7 @@ class ApiService {
             Uri.parse('$baseUrl/users/$userId'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       return _handleResponse(response);
     } on SocketException catch (e) {
@@ -158,15 +159,9 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final url = Uri.parse('$baseUrl/users/$userId/settings');
 
-      // Log request details for debugging
-      print('Updating user settings for userId: $userId');
-      print('Request URL: $url');
-      print('Request body: ${jsonEncode(updates)}');
-      print('Headers: $headers');
-
       final response = await http
           .put(url, headers: headers, body: jsonEncode(updates))
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       _handleResponse(response);
     } on SocketException catch (e) {
@@ -200,7 +195,7 @@ class ApiService {
         ..files.add(await http.MultipartFile.fromPath('image', imageFile.path,
             contentType: MediaType('image', 'jpeg')));
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(defaultTimeout);
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -224,22 +219,16 @@ class ApiService {
   /// Get Posts from the Community
   Future<List<dynamic>> getPosts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(_tokenKey);
-      Map<String, String> headers = {'Content-Type': 'application/json'};
+      final headers = await _getAuthHeaders();
+      final endpoint = '$baseUrl/posts';
 
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      print('Fetching posts from: $baseUrl/posts');
+      print('Fetching posts from: $endpoint');
 
       final response = await http
-          .get(Uri.parse('$baseUrl/posts'), headers: headers)
-          .timeout(Duration(seconds: 10));
+          .get(Uri.parse(endpoint), headers: headers)
+          .timeout(defaultTimeout);
 
       print('Posts response status: ${response.statusCode}');
-      print('Posts response body: ${response.body}');
 
       final data = _handleResponse(response);
 
@@ -276,7 +265,7 @@ class ApiService {
             headers: headers,
             body: jsonEncode({'newPassword': newPassword}),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       _handleResponse(response);
     } on SocketException catch (e) {
@@ -301,7 +290,7 @@ class ApiService {
             Uri.parse('$baseUrl/users/$userId'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       _handleResponse(response);
     } on SocketException catch (e) {
@@ -326,7 +315,7 @@ class ApiService {
 
       final response = await http
           .get(Uri.parse(endpoint), headers: headers)
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _handleResponse(response)['results'] as List<dynamic>;
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -350,7 +339,7 @@ class ApiService {
             headers: headers,
             body: jsonEncode(workout),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _handleResponse(response);
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -366,7 +355,6 @@ class ApiService {
 
   /// Social Features
   Future<List<dynamic>> getPendingFriendRequests(int userId) async {
-    // Pass userId
     try {
       final headers = await _getAuthHeaders();
       final response = await http
@@ -374,7 +362,7 @@ class ApiService {
             Uri.parse('$baseUrl/users/$userId/friend-requests/pending'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _handleResponse(response) as List<dynamic>;
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -397,7 +385,7 @@ class ApiService {
             headers: headers,
             body: jsonEncode({'receiverId': targetUserId}),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
       _handleResponse(response);
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -412,16 +400,14 @@ class ApiService {
   }
 
   Future<void> acceptFriendRequestById(int requestId) async {
-    // Pass requestId
     try {
       final headers = await _getAuthHeaders();
       final response = await http
           .put(
-            // Using PUT request
             Uri.parse('$baseUrl/friend-requests/$requestId/accept'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
       _handleResponse(response);
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -436,16 +422,14 @@ class ApiService {
   }
 
   Future<void> rejectFriendRequestById(int requestId) async {
-    // Pass requestId
     try {
       final headers = await _getAuthHeaders();
       final response = await http
           .put(
-            // Using PUT request
             Uri.parse('$baseUrl/friend-requests/$requestId/reject'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
       _handleResponse(response);
     } on SocketException catch (e) {
       print('SocketException: $e');
@@ -474,7 +458,7 @@ class ApiService {
             headers: headers,
             body: jsonEncode({'ingredients': ingredients}),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       print('Response status: ${response.statusCode}');
 
@@ -526,7 +510,7 @@ class ApiService {
             headers: headers,
             body: jsonEncode(mealData),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       _handleResponse(response);
     } on SocketException catch (e) {
@@ -555,7 +539,7 @@ class ApiService {
                 'user_id=$userId'),
             headers: headers,
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(defaultTimeout);
 
       return _handleResponse(response) as List<dynamic>;
     } on SocketException catch (e) {
